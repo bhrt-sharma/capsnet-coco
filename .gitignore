@@ -1,3 +1,9 @@
+# all images and zips and other big files 
+*.jpg 
+*.zip
+*.json
+*.DS_Store
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
