@@ -1,8 +1,8 @@
 echo "==========  Downloading all datasets."
 python data/download_coco.py
 
-# echo "==========  Removing zip files."
-# rm *.zip
+echo "==========  Removing zip files."
+rm *.zip
 
 echo "==========  Downloading train / val captions"
 curl -O http://images.cocodataset.org/annotations/annotations_trainval2014.zip
