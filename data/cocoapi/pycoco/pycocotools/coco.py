@@ -233,27 +233,17 @@ class COCO:
         elif type(ids) == int:
             return [self.imgs[ids]]
 
-
-    def getGroundTruthMasks(self, anns, I):
-        ax = plt.gca()
-        im = ax.imshow(I)
-        ax.set_autoscale_on(False)
-        import pdb; pdb.set_trace()
-
-        # https://codeyarns.com/2014/01/16/how-to-convert-between-numpy-array-and-pil-image/
-        # https://stackoverflow.com/questions/3654289/scipy-create-2d-polygon-mask
-
+    def getGroundTruthMasks(self, anns):
         polygons = []
-        color = []
+        segs = []
         for ann in anns:
-            c = (np.random.random((1, 3))*0.6+0.4).tolist()[0]
             if 'segmentation' in ann:
                 if type(ann['segmentation']) == list:
                     # polygon
                     for seg in ann['segmentation']:
                         poly = np.array(seg).reshape((int(len(seg)/2), 2))
                         polygons.append(Polygon(poly))
-                        color.append(c)
+                        segs.append(seg)
                 else:
                     # mask
                     t = self.imgs[ann['image_id']]
@@ -269,15 +259,7 @@ class COCO:
                         color_mask = np.random.random((1, 3)).tolist()[0]
                     for i in range(3):
                         img[:,:,i] = color_mask[i]
-                    ax.imshow(np.dstack( (img, m*0.5) ))
-        # p = PatchCollection(polygons, facecolor=color, linewidths=0, alpha=0.4)
-        # ax.add_collection(p)
-        # p = PatchCollection(polygons, facecolor='none', edgecolors=color, linewidths=2)
-        # ax.add_collection(p)
-
-        im.set_clip_path(polygons[0])
-        plt.axis('off')
-        plt.show()
+        return segs
 
     def showAnns(self, anns):
         """

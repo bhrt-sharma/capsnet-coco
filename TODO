@@ -1,0 +1,9 @@
+modify getGroundTruthMasks in coco.py to also return non-polygon segments
+
+modify maskSegmentOut to 
+* convert from RGBA to RGB so that we aren't training on invisible data
+* output to a particular folder
+* put it in a different file 
+* write pipeline 
+
+test out the pipeline for downloading images on Google Cloud
