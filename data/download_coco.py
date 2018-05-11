@@ -67,17 +67,17 @@ def main():
 	parser.add_argument(
 		"-trf", 
 		"--train_folder",
-	    default="data/train/images"
+	    default="data/train/images/raw"
 	)
 	parser.add_argument(
 		"-tef", 
 		"--test_folder",
-	    default="data/test/images"
+	    default="data/test/images/raw"
 	)
 	parser.add_argument(
 		"-vf", 
 		"--val_folder",
-	    default="data/val/images"
+	    default="data/val/images/raw"
 	)
 	args = parser.parse_args()
 	download(args)
