@@ -46,6 +46,8 @@ __version__ = '2.0'
 
 import json
 import time
+import scipy as sp
+from PIL import Image, ImageDraw
 import matplotlib.pyplot as plt
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Polygon
@@ -53,6 +55,7 @@ import numpy as np
 import copy
 import itertools
 from . import mask as maskUtils
+import pycocotools._mask as _mask
 import os
 from collections import defaultdict
 import sys
@@ -229,6 +232,52 @@ class COCO:
             return [self.imgs[id] for id in ids]
         elif type(ids) == int:
             return [self.imgs[ids]]
+
+
+    def getGroundTruthMasks(self, anns, I):
+        ax = plt.gca()
+        im = ax.imshow(I)
+        ax.set_autoscale_on(False)
+        import pdb; pdb.set_trace()
+
+        # https://codeyarns.com/2014/01/16/how-to-convert-between-numpy-array-and-pil-image/
+        # https://stackoverflow.com/questions/3654289/scipy-create-2d-polygon-mask
+
+        polygons = []
+        color = []
+        for ann in anns:
+            c = (np.random.random((1, 3))*0.6+0.4).tolist()[0]
+            if 'segmentation' in ann:
+                if type(ann['segmentation']) == list:
+                    # polygon
+                    for seg in ann['segmentation']:
+                        poly = np.array(seg).reshape((int(len(seg)/2), 2))
+                        polygons.append(Polygon(poly))
+                        color.append(c)
+                else:
+                    # mask
+                    t = self.imgs[ann['image_id']]
+                    if type(ann['segmentation']['counts']) == list:
+                        rle = maskUtils.frPyObjects([ann['segmentation']], t['height'], t['width'])
+                    else:
+                        rle = [ann['segmentation']]
+                    m = maskUtils.decode(rle)
+                    img = np.ones( (m.shape[0], m.shape[1], 3) )
+                    if ann['iscrowd'] == 1:
+                        color_mask = np.array([2.0,166.0,101.0])/255
+                    if ann['iscrowd'] == 0:
+                        color_mask = np.random.random((1, 3)).tolist()[0]
+                    for i in range(3):
+                        img[:,:,i] = color_mask[i]
+                    ax.imshow(np.dstack( (img, m*0.5) ))
+        # p = PatchCollection(polygons, facecolor=color, linewidths=0, alpha=0.4)
+        # ax.add_collection(p)
+        # p = PatchCollection(polygons, facecolor='none', edgecolors=color, linewidths=2)
+        # ax.add_collection(p)
+
+        im.set_clip_path(polygons[0])
+        plt.axis('off')
+        plt.show()
 
     def showAnns(self, anns):
         """
