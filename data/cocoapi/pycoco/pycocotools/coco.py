@@ -259,6 +259,8 @@ class COCO:
                         color_mask = np.random.random((1, 3)).tolist()[0]
                     for i in range(3):
                         img[:,:,i] = color_mask[i]
+
+                    segs.append(img)
         return segs
 
     def showAnns(self, anns):
