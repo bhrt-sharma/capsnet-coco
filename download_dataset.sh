@@ -1,5 +1,5 @@
-# echo "==========  Downloading all datasets."
-# python data/download_coco.py
+echo "==========  Downloading all datasets."
+python data/download_coco.py
 
 # echo "==========  Removing zip files."
 # rm *.zip
