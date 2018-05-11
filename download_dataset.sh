@@ -1,7 +1,15 @@
 echo "==========  Downloading all datasets."
-python data/download_coco.py
+echo "Downloading train dataset."
+python data/download_coco.py -ds train 
+rm *_train.zip
+echo "Downloading val dataset."
+python data/download_coco.py -ds val
+rm *_val.zip
+echo "Downloading test dataset."
+python data/download_coco.py -ds test
+rm *_test.zip
 
-echo "==========  Removing zip files."
+echo "==========  Cleaning up zip files."
 rm *.zip
 
 echo "==========  Downloading train / val captions"
