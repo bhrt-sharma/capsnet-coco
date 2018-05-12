@@ -54,8 +54,8 @@ from matplotlib.patches import Polygon
 import numpy as np
 import copy
 import itertools
-import mask as maskUtils
-import _mask
+from . import mask as maskUtils
+import pycocotools._mask as _mask
 import os
 from collections import defaultdict
 import sys
