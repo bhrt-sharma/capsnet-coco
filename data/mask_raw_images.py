@@ -85,7 +85,7 @@ def main():
     parser.add_argument(
         "-ds", 
         "--dataset",
-        default="all",
+        default="train",
         help="which dataset to mask, of train, test, or val",
         choices=["train", "test", "val"]
     )
