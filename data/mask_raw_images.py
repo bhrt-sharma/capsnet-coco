@@ -2,7 +2,7 @@ import argparse
 from PIL import Image, ImageDraw
 import numpy as np
 import os
-from cocoapi import COCO
+from cocoapi.pycoco.pycocotools.coco import COCO
 from scipy.ndimage import imread
 
 
