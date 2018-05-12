@@ -1,16 +1,12 @@
-echo "==========  Downloading all datasets."
-echo "Downloading train dataset."
+echo "==========  Downloading train dataset"
 python data/download_coco.py -ds train 
 rm *_train.zip
-echo "Downloading val dataset."
+echo "==========  Downloading val dataset."
 python data/download_coco.py -ds val
 rm *_val.zip
-echo "Downloading test dataset."
+echo "==========  Downloading test dataset."
 python data/download_coco.py -ds test
 rm *_test.zip
-
-echo "==========  Cleaning up zip files."
-rm *.zip
 
 echo "==========  Downloading train / val captions"
 curl -O http://images.cocodataset.org/annotations/annotations_trainval2014.zip
