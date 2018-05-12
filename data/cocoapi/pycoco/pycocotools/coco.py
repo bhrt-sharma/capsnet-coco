@@ -237,13 +237,14 @@ class COCO:
         polygons = []
         segs = []
         for ann in anns:
+            category_id = ann['category_id']
             if 'segmentation' in ann:
                 if type(ann['segmentation']) == list:
                     # polygon
                     for seg in ann['segmentation']:
                         poly = np.array(seg).reshape((int(len(seg)/2), 2))
                         polygons.append(Polygon(poly))
-                        segs.append(seg)
+                        segs.append((category_id, seg))
                 else:
                     # mask
                     t = self.imgs[ann['image_id']]
@@ -260,7 +261,7 @@ class COCO:
                     for i in range(3):
                         img[:,:,i] = color_mask[i]
 
-                    segs.append(img)
+                    segs.append((category_id, img))
         return segs
 
     def showAnns(self, anns):

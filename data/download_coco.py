@@ -25,17 +25,17 @@ def download(args):
 		datasets = [args.dataset]
 
 	for dataset in datasets:
-		download_link = DOWNLOAD_LINKS[args.year][dataset]
+		download_link = DOWNLOAD_LINKS[2014][dataset]
 
-		print("Downloading {} {} dataset ... ".format(args.year, dataset))
+		print("Downloading {} {} dataset ... ".format(2014, dataset))
 		r = requests.get(download_link, stream=True)
-		with open('{}_{}.zip'.format(args.year, dataset), 'wb') as f:
+		with open('{}_{}.zip'.format(2014, dataset), 'wb') as f:
 		    for chunk in r.iter_content(chunk_size=1024): 
 		        if chunk: # filter out keep-alive new chunks
 		            f.write(chunk)
 
 		print("Extracting... ")
-		zip_ref = zipfile.ZipFile('{}_{}.zip'.format(args.year, dataset), 'r')
+		zip_ref = zipfile.ZipFile('{}_{}.zip'.format(2014, dataset), 'r')
 
 		if dataset == "train":
 			folder = args.train_folder
@@ -57,13 +57,13 @@ def main():
 	    help="which dataset to download of train, test, or val",
 	    choices=["train", "test", "val"]
 	)
-	parser.add_argument(
-		"-y", 
-		"--year",
-	    default=2014,
-	    help="which year, 2014 or 2017",
-	    choices=[2014, 2017]
-	)
+	# parser.add_argument(
+	# 	"-y", 
+	# 	"--year",
+	#     default=2014,
+	#     help="which year, 2014 or 2017",
+	#     choices=[2014, 2017]
+	# )
 	parser.add_argument(
 		"-trf", 
 		"--train_folder",
