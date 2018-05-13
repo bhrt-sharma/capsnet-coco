@@ -25,6 +25,7 @@ Then run `conda install pillow`.
 Then, we need to build the pycoco tools first. Navigate to data/cocoapi/pycoco and run 
 
 `python setup.py build_ext --inplace`
+
 `rm -rf build`
 
 # Preprocessing (Masking)
