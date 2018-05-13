@@ -75,7 +75,7 @@ def mask_all(args):
                 category_id, seg = tup
                 maskSegmentOut(
                     I, 
-                    tup, 
+                    seg, 
                     pic.replace(".jpg", "") + "_{}".format(category_id), 
                     saveTo=out_folder
                 )
