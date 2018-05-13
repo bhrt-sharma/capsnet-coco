@@ -9,7 +9,7 @@ from scipy.ndimage import imread
 """
 @params:
 - im is an **RGBA** Image as imported by scipy.ndimage.imread
-- seg is of shape (category_id, segmentation array) from the CoCoAPI
+- seg is segmentation array from the CoCoAPI
 - out_name is what to call it 
 - saveTo is a folder to save the image to 
 - transparency determines whether the background is transparent (RGBA) or black (RGB)
@@ -17,7 +17,6 @@ from scipy.ndimage import imread
 def maskSegmentOut(im, seg, out_name, saveTo="..", transparency=False):
     # convert to numpy (for convenience)
     imArray = np.asarray(im)
-    category_id, seg = seg
 
     # create mask
     maskIm = Image.new('L', (imArray.shape[1], imArray.shape[0]), 0)
@@ -76,7 +75,7 @@ def mask_all(args):
                 category_id, seg = tup
                 maskSegmentOut(
                     I, 
-                    seg, 
+                    tup, 
                     pic.replace(".jpg", "") + "_{}".format(category_id), 
                     saveTo=out_folder
                 )
