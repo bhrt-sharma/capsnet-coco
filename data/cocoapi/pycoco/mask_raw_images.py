@@ -6,6 +6,9 @@ from pycocotools.coco import COCO
 from scipy.ndimage import imread
 
 
+def getIdFromImage(file_name):
+    return int(file_name.split("_")[-1].replace(".jpg", ""))
+
 """
 @params:
 - im is an **RGBA** Image as imported by scipy.ndimage.imread
@@ -63,7 +66,7 @@ def mask_all(args):
 
             # converts something like "COCO_train2014_000000057870.jpg"
             # to 57870
-            img_id = int(pic.split("_")[-1].replace(".jpg", ""))
+            img_id = getIdFromImage(pic)
 
             # get annotation
             annIds = cc.getAnnIds(imgIds=img_id)
