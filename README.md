@@ -31,12 +31,20 @@ Then, we need to build the pycoco tools first. Navigate to data/cocoapi/pycoco a
 
 To obtain the ground truth masks, simply:
 
-`python data/cocoapi/pycoco/pycocotools/mask_raw_images -ds train` 
+`python data/cocoapi/pycoco/pycocotools/mask_raw_images.py -ds train` 
 
-`python data/cocoapi/pycoco/pycocotools/mask_raw_images -ds val` 
+`python data/cocoapi/pycoco/pycocotools/mask_raw_images.py -ds val` 
 
-`python data/cocoapi/pycoco/pycocotools/mask_raw_images -ds test` 
+`python data/cocoapi/pycoco/pycocotools/mask_raw_images.py -ds test` 
 
 
-Optionally add the `-rt` flag in order to remove textures from images too. This has not yet been implemented. 
+Optionally add the `-rt` flag in order to remove textures from images too. *This has not yet been implemented.*
 
+
+Images are named something like: "COCO_train2014_000000057870.jpg". The number at the end is the id. `mask_raw_images` will output masked images to, for example, `data/train/images/masked`, with a slightly amended file name, such as "COCO_train2014_000000057870_18.jpg". The extra number at the end is meant to denote the category id. We can then obtain the category itself by instantiating a COCO object and calling `coco.loadCats([ids])`. Category id 18 above for example, will return something like 
+
+`[{u'supercategory': u'animal', u'id': 18, u'name': u'dog'}]`
+
+# Training
+
+The images as they stand are too large. Justin suggested that we downsample the images to something more manageable, on the order of 128x128 or even 64x64.
