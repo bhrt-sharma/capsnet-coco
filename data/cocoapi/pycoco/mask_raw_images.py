@@ -2,7 +2,7 @@ import argparse
 from PIL import Image, ImageDraw
 import numpy as np
 import os
-from cocoapi.pycoco.pycocotools.coco import COCO
+from pycocotools.coco import COCO
 from scipy.ndimage import imread
 
 
@@ -72,7 +72,8 @@ def mask_all(args):
 
             # get segments from annotation
             segs = cc.getGroundTruthMasks(anns)
-            for category_id, seg in segs:
+            for tup in segs:
+                category_id, seg = tup
                 maskSegmentOut(
                     I, 
                     seg, 
