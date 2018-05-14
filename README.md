@@ -1,5 +1,25 @@
 All right boys let's do this.
 
+# TODO
+
+## Preprocessing
+
+1. Write a dataset object... 
+2. Modify `getGroundTruthMasks` in coco.py to also return non-polygon segments
+3. Add neutral grey background (instead of the black background? Not sure if this should theoretically make any difference).
+4. Figure out a detexturizing algorithm – either reduce contrast or add a small amount of gaussian blur. 
+
+## Training and such
+
+DON'T FORGET TO DOWNSAMPLE IMAGES! The images are too large as they stand, so in order to make this tractable we should probably downsample to 64x64 or 128x128. 
+
+1. Baseline: train a resnet model on the raw data, test on raw data. 
+2. Baseline on masked: train a resnet model on the masked images, test on masked images.
+3. Baseline on masked, detexturized: train a resnet model on the detexturized, masked images, test on detexturized, masked images.
+4. Capsnet: train a capsnet model on the raw data, test on raw data. 
+5. Capsnet on masked: train a capsnet model on the masked images, test on masked images.
+6. Baseline on masked, detexturized: train a capsnet model on the detexturized, masked images, test on detexturized, masked images.
+
 # Download 
 
 To download all of the datasets (i.e., train, val, and test), simply run `sh download_dataset.sh`. 
@@ -45,7 +65,3 @@ Optionally add the `-rt` flag in order to remove textures from images too. *This
 Images are named something like: "COCO_train2014_000000057870.jpg". The number at the end is the id. `mask_raw_images` will output masked images to, for example, `data/train/images/masked`, with a slightly amended file name, such as "COCO_train2014_000000057870_18.jpg". The extra number at the end is meant to denote the category id. We can then obtain the category itself by instantiating a COCO object and calling `coco.loadCats([ids])`. Category id 18 above for example, will return something like 
 
 `[{u'supercategory': u'animal', u'id': 18, u'name': u'dog'}]`
-
-# Training
-
-The images as they stand are too large. Justin suggested that we downsample the images to something more manageable, on the order of 128x128 or even 64x64.
