@@ -62,14 +62,15 @@ def mask_all(args):
     all_pics = os.listdir(raw_folder)
     all_pics = [pic for pic in all_pics if ".jpg" in pic]
 
-    print("Computing mean image...")
-    running_mean_image = imread("{}/{}".format(raw_folder, all_pics[0]), mode="RGB")
+    print("Computing per-channel means...")
+    running_mean_image = np.mean(imread("{}/{}".format(raw_folder, all_pics[0]), mode="RGB"), axis=(0,1))
     num_images_processed = 1
     for i in range(1, len(all_pics)):
         pic = all_pics[i]
         I = imread("{}/{}".format(raw_folder, pic), mode="RGB")
+        img_mean = np.mean(I, axis=(0, 1))
         running_mean_image = running_mean_image * num_images_processed
-        running_mean_image += I
+        running_mean_image += img_mean
         num_images_processed += 1
         running_mean_image = running_mean_image / num_images_processed
 
