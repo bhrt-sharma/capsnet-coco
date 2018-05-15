@@ -3,7 +3,7 @@ from PIL import Image, ImageDraw
 import numpy as np
 import os
 from pycocotools.coco import COCO
-from scipy.ndimage import imread
+from scipy.ndimage import imread, gaussian_filter
 
 
 def getIdFromImage(file_name):
@@ -17,7 +17,7 @@ def getIdFromImage(file_name):
 - saveTo is a folder to save the image to 
 - transparency determines whether the background is transparent (RGBA) or black (RGB)
 """
-def maskSegmentOut(im, seg, out_name, saveTo="..", transparency=False):
+def maskSegmentOut(im, seg, background_image, out_name, saveTo=".."):
     # convert to numpy (for convenience)
     imArray = np.asarray(im)
 
@@ -34,54 +34,70 @@ def maskSegmentOut(im, seg, out_name, saveTo="..", transparency=False):
 
     # set transparency
     newImArray[:,:,3] = mask * 255
-    if not transparency:
-        newImArray[newImArray[:,:,3] == 0] = 0
-        # back to Image from numpy
-        newIm = Image.fromarray(newImArray[:, :, :3], "RGB")
-    else:
-        newIm = Image.fromarray(newImArray, "RGBA")
+
+    # set colors to background image where transparency is 0
+    newImArray[newImArray[:,:,3] == 0] = background_image[newImArray[:,:,3] == 0] 
+
+    # back to Image from numpy
+    newIm = Image.fromarray(newImArray[:, :, :3], "RGB")
+
+    # gaussian blur 
+    newIm = gaussian_filter(newIm, sigma=0.1)
+
     newIm.save("{}/{}.jpg".format(saveTo, out_name))
 
 def mask_all(args):
     # decide which folder to output to
-    remove_texture = args.remove_texture
     dataset = args.dataset
-    out_folder = "data/{}/images/".format(dataset)
-    if remove_texture:
-        out_folder += "masked_low_contrast"
-    else:
-        out_folder += "masked"
+    out_folder = "data/{}/images/masked".format(dataset)
 
     # initialize coco API
     ann_file = 'data/{}/instances_{}2014.json'.format(dataset, dataset)
     cc = COCO(ann_file)
 
-    # loop through folder
+    # loop through folder to get the mean image
+    # have to do a running mean because there are too many images 
+    # to store in memory at once 
     raw_folder = "data/{}/images/{}2014".format(dataset, dataset)
     all_pics = os.listdir(raw_folder)
+    all_pics = [pic for pic in all_pics if ".jpg" in pic]
+
+    print("Computing mean image...")
+    running_mean_image = imread("{}/{}".format(raw_folder, all_pics[0]), mode="RGB")
+    num_images_processed = 1
+    for i in range(1, len(all_pics)):
+        pic = all_pics[i]
+        I = imread("{}/{}".format(raw_folder, pic), mode="RGB")
+        running_mean_image = running_mean_image * num_images_processed
+        running_mean_image += I
+        num_images_processed += 1
+        running_mean_image = running_mean_image / num_images_processed
+
+    # then loop through to actually perform the masking 
+    # this is done in RGBA and not RGB
     for pic in all_pics:
-        if ".jpg" in pic:
-            # get image 
-            I = imread("{}/{}".format(raw_folder, pic), mode="RGBA")
+        # get image 
+        I = imread("{}/{}".format(raw_folder, pic), mode="RGBA")
 
-            # converts something like "COCO_train2014_000000057870.jpg"
-            # to 57870
-            img_id = getIdFromImage(pic)
+        # converts something like "COCO_train2014_000000057870.jpg"
+        # to 57870
+        img_id = getIdFromImage(pic)
 
-            # get annotation
-            annIds = cc.getAnnIds(imgIds=img_id)
-            anns = cc.loadAnns(annIds)
+        # get annotation
+        annIds = cc.getAnnIds(imgIds=img_id)
+        anns = cc.loadAnns(annIds)
 
-            # get segments from annotation
-            segs = cc.getGroundTruthMasks(anns)
-            for tup in segs:
-                category_id, seg = tup
-                maskSegmentOut(
-                    I, 
-                    seg, 
-                    pic.replace(".jpg", "") + "_{}".format(category_id), 
-                    saveTo=out_folder
-                )
+        # get segments from annotation
+        segs = cc.getGroundTruthMasks(anns)
+        for tup in segs:
+            category_id, seg = tup
+            maskSegmentOut(
+                I, 
+                seg, 
+                running_mean_image,
+                pic.replace(".jpg", "") + "_{}".format(category_id), 
+                saveTo=out_folder
+            )
 
 def main():
     parser = argparse.ArgumentParser()
@@ -91,12 +107,6 @@ def main():
         default="train",
         help="which dataset to mask, of train, test, or val",
         choices=["train", "test", "val"]
-    )
-    parser.add_argument(
-        "-rt", 
-        "--remove_texture",
-        default=False,
-        help="whether or not to remove texture",
     )
     args = parser.parse_args()
     mask_all(args)
