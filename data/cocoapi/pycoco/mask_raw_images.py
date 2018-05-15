@@ -38,11 +38,11 @@ def maskSegmentOut(im, seg, background_image, out_name, saveTo=".."):
     # set colors to background image where transparency is 0
     newImArray[newImArray[:,:,3] == 0] = background_image[newImArray[:,:,3] == 0] 
 
+    # gaussian filter 
+    newImArray = gaussian_filter(newImArray, 0.9)
+
     # back to Image from numpy
     newIm = Image.fromarray(newImArray[:, :, :3], "RGB")
-
-    # gaussian blur 
-    newIm = gaussian_filter(newIm, sigma=0.1)
 
     newIm.save("{}/{}.jpg".format(saveTo, out_name))
 
