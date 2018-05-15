@@ -79,8 +79,7 @@ def mask_all(args):
     for pic in all_pics:
         # get image 
         I = imread("{}/{}".format(raw_folder, pic), mode="RGBA")
-        I_rgb = imread("{}/{}".format(raw_folder, pic), mode="RGB")
-        background_image = np.mean(I_rgb, axis=(0, 1))
+        background_image = np.mean(I, axis=(0, 1))
 
         # converts something like "COCO_train2014_000000057870.jpg"
         # to 57870
