@@ -36,7 +36,7 @@ def maskSegmentOut(im, seg, background_image, out_name, saveTo=".."):
     newImArray[:,:,3] = mask * 255
 
     # set colors to background image where transparency is 0
-    newImArray[newImArray[:,:,3] == 0] = background_image[newImArray[:,:,3] == 0] 
+    newImArray[newImArray[:,:,3] == 0] = background_image
 
     # gaussian filter 
     newImArray = gaussian_filter(newImArray, 0.9)
@@ -62,23 +62,25 @@ def mask_all(args):
     all_pics = os.listdir(raw_folder)
     all_pics = [pic for pic in all_pics if ".jpg" in pic]
 
-    print("Computing per-channel means...")
-    running_mean_image = np.mean(imread("{}/{}".format(raw_folder, all_pics[0]), mode="RGB"), axis=(0,1))
-    num_images_processed = 1
-    for i in range(1, len(all_pics)):
-        pic = all_pics[i]
-        I = imread("{}/{}".format(raw_folder, pic), mode="RGB")
-        img_mean = np.mean(I, axis=(0, 1))
-        running_mean_image = running_mean_image * num_images_processed
-        running_mean_image += img_mean
-        num_images_processed += 1
-        running_mean_image = running_mean_image / num_images_processed
+    # print("Computing per-channel means...")
+    # running_mean_image = np.mean(imread("{}/{}".format(raw_folder, all_pics[0]), mode="RGB"), axis=(0,1))
+    # num_images_processed = 1
+    # for i in range(1, len(all_pics)):
+    #     pic = all_pics[i]
+    #     I = imread("{}/{}".format(raw_folder, pic), mode="RGB")
+    #     img_mean = np.mean(I, axis=(0, 1))
+    #     running_mean_image = running_mean_image * num_images_processed
+    #     running_mean_image += img_mean
+    #     num_images_processed += 1
+    #     running_mean_image = running_mean_image / num_images_processed
 
     # then loop through to actually perform the masking 
     # this is done in RGBA and not RGB
     for pic in all_pics:
         # get image 
         I = imread("{}/{}".format(raw_folder, pic), mode="RGBA")
+        I_rgb = imread("{}/{}".format(raw_folder, pic), mode="RGB")
+        background_image = np.mean(I_rgb, axis=(0, 1))
 
         # converts something like "COCO_train2014_000000057870.jpg"
         # to 57870
@@ -95,7 +97,7 @@ def mask_all(args):
             maskSegmentOut(
                 I, 
                 seg, 
-                running_mean_image,
+                background_image,
                 pic.replace(".jpg", "") + "_{}".format(category_id), 
                 saveTo=out_folder
             )
