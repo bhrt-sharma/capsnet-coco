@@ -20,9 +20,6 @@ def getIdFromImage(file_name):
 def maskSegmentOut(im, seg, background_image, out_name, saveTo=".."):
     # convert to numpy (for convenience)
     imArray = np.asarray(im)
-    
-    # gaussian filter 
-    imArray = gaussian_filter(imArray, 0.9)
 
     # create mask
     maskIm = Image.new('L', (imArray.shape[1], imArray.shape[0]), 0)
@@ -42,6 +39,9 @@ def maskSegmentOut(im, seg, background_image, out_name, saveTo=".."):
     # newImArray[newImArray[:,:,3] == 0] = 0
     newImArray[newImArray[:,:,3] == 0] = np.concatenate([background_image])
 
+    # gaussian filter 
+    newImArray = gaussian_filter(newImArray[:, :, :3], 0.9)
+    
     # back to Image from numpy
     newIm = Image.fromarray(newImArray[:, :, :3], "RGB")
 
