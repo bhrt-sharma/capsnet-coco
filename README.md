@@ -52,11 +52,11 @@ Then, we need to build the pycoco tools first. Navigate to data/cocoapi/pycoco a
 
 To obtain the ground truth masks, simply:
 
-`python data/cocoapi/pycoco/pycocotools/mask_raw_images.py -ds train` 
+`python data/cocoapi/pycoco/mask_raw_images.py -ds train`
 
-`python data/cocoapi/pycoco/pycocotools/mask_raw_images.py -ds val` 
+`python data/cocoapi/pycoco/mask_raw_images.py -ds val`
 
-`python data/cocoapi/pycoco/pycocotools/mask_raw_images.py -ds test` 
+`python data/cocoapi/pycoco/mask_raw_images.py -ds test` 
 
 
 Optionally add the `-rt` flag in order to remove textures from images too. *This has not yet been implemented.*
