@@ -144,7 +144,7 @@ def mask_all(args):
                 saveTo=out_folder,
                 pad_to_square=pad_to_square,
                 shrink=shrink,
-                normalize=norm,
+                normalize=normalize,
                 grayscale=black_and_white
             )
 
@@ -179,7 +179,7 @@ def main():
         help="shrink"
     )
     parser.add_argument(
-        "-norm", 
+        "-n", 
         "--norm",
         default=False,
         action='store_true',
