@@ -25,9 +25,11 @@ def padImageToSquare(imArray, mode="edge"):
     return np.pad(imArray, pad_width, mode)
 
 def shrinkSquareImage(imArray, size=128):
-    if len(imArray.shape) == 4:
-        return resize(imArray, (size, size, imArray.shape[2], imArray.shape[3]))
-    return resize(imArray, (size, size, imArray.shape[2]))
+    resized = resize(imArray, (size, size))
+    rescaled_image = 255 * resized
+    # Convert to integer data type pixels.
+    final_image = rescaled_image.astype(np.uint8)
+    return final_image
 
 """
 @params:
