@@ -22,7 +22,7 @@ def padImageToSquare(imArray, mode="mean"):
     length_diff = TARGET_LENGTH - length
     width_diff = TARGET_WIDTH - width 
 
-    pad_width = ((length_diff / 2, length_diff / 2), (width_diff/2, width_diff/2))
+    pad_width = ((length_diff // 2, length_diff // 2), (width_diff // 2, width_diff // 2))
     return np.pad(imArray, pad_width, mode)
 
 
