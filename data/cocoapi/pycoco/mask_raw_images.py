@@ -24,7 +24,7 @@ def padImageToSquare(imArray, mode="edge"):
     pad_width = ((length_diff // 2, length_diff // 2), (width_diff // 2, width_diff // 2), (0, 0))
     return np.pad(imArray, pad_width, mode)
 
-def shrinkSquareImage(imArray, size=128):
+def shrinkSquareImage(imArray, size=48):
     resized = resize(imArray, (size, size))
     rescaled_image = 255 * resized
     # Convert to integer data type pixels.
@@ -171,6 +171,20 @@ def main():
         default=False,
         action='store_true',
         help="shrink"
+    )
+    parser.add_argument(
+        "-mc", 
+        "--mean_center",
+        default=False,
+        action='store_true',
+        help="mean center resulting images"
+    )
+    parser.add_argument(
+        "-mcuv", 
+        "--unit_variance",
+        default=False,
+        action='store_true',
+        help="mean center and unit variance"
     )
 
     args = parser.parse_args()
