@@ -22,7 +22,7 @@ def padImageToSquare(imArray, mode="mean"):
     length_diff = TARGET_LENGTH - length
     width_diff = TARGET_WIDTH - width 
 
-    pad_width = ((length_diff, width_diff), (length_diff, width_diff))
+    pad_width = ((length_diff / 2, length_diff / 2), (width_diff/2, width_diff/2))
     return np.pad(imArray, pad_width, mode)
 
 
@@ -152,6 +152,7 @@ def main():
     parser.add_argument(
         "-bw", 
         "--black_and_white",
+        action='store_true',
         default=False,
         help="convert to grayscale"
     )
@@ -159,12 +160,14 @@ def main():
         "-ps", 
         "--pad_to_square",
         default=False,
+        action='store_true',
         help="pad to square size"
     )
     parser.add_argument(
         "-sh", 
         "--shrink",
         default=False,
+        action='store_true',
         help="shrink"
     )
 
