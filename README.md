@@ -4,13 +4,13 @@ All right boys let's do this.
 
 ## Preprocessing
 
-1. Modify `getGroundTruthMasks` in coco.py to also return non-polygon segments
-2. Add neutral grey background (instead of the black background? Not sure if this should theoretically make any difference).
-3. Figure out a detexturizing algorithm – either reduce contrast or add a small amount of gaussian blur. 
+~1. Modify `getGroundTruthMasks` in coco.py to also return non-polygon segments~
+~2. Add neutral grey background (instead of the black background? Not sure if this should theoretically make any difference).~
+~3. Figure out a detexturizing algorithm – either reduce contrast or add a small amount of gaussian blur.~
 
 ## Training and such
 
-DON'T FORGET TO DOWNSAMPLE IMAGES! The images are too large as they stand, so in order to make this tractable we should probably downsample to 64x64 or 128x128. 
+~The images are too large as they stand, so in order to make this tractable we should probably downsample to 64x64 or 128x128. ~
 
 0. Modify Dataset depending on how you guys want to load batches.
 1. Baseline: train a resnet model on the raw data, test on raw data. 
@@ -67,9 +67,6 @@ Images are named something like: "COCO_train2014_000000057870.jpg". The number a
 
 
 # Training 
-
-DON'T FORGET TO DOWNSAMPLE IMAGES! The images are too large as they stand, so in order to make this tractable we should probably downsample to 64x64 or 128x128. 
-
 
 Load images by instantiating a Dataset object. 
 
