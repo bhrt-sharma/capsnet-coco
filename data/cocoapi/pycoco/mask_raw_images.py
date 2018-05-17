@@ -39,7 +39,7 @@ def shrinkSquareImage(imArray, size=48):
 - saveTo is a folder to save the image to 
 - transparency determines whether the background is transparent (RGBA) or black (RGB)
 """
-def maskSegmentOut(im, seg, background_image, out_name, saveTo="..", pad_to_square=False, shrink=False, grayscale=False):
+def maskSegmentOut(im, seg, background_image, out_name, saveTo="..", pad_to_square=False, shrink=False, normalize=False, grayscale=False):
     # convert to numpy (for convenience)
     imArray = np.asarray(im)
 
@@ -60,6 +60,10 @@ def maskSegmentOut(im, seg, background_image, out_name, saveTo="..", pad_to_squa
     # set colors to background image where transparency is 0
     # newImArray[newImArray[:,:,3] == 0] = 0
     newImArray[newImArray[:,:,3] == 0] = np.concatenate([background_image])
+
+    # mean center and unit variance by RGB channel
+    if normalize:
+        newImArray = np.mean(newImArray, axis=(0, 1)) / np.std(newImArray, axis=(0, 1))
 
     # pad to square and shrink
     if pad_to_square:
@@ -85,6 +89,7 @@ def mask_all(args):
     pad_to_square = args.pad_to_square
     shrink = args.shrink
     black_and_white = args.black_and_white
+    normalize = args.norm
 
     # which folder to output to
     out_folder = "data/{}/images/masked".format(dataset)
@@ -139,6 +144,7 @@ def mask_all(args):
                 saveTo=out_folder,
                 pad_to_square=pad_to_square,
                 shrink=shrink,
+                normalize=norm,
                 grayscale=black_and_white
             )
 
@@ -173,15 +179,8 @@ def main():
         help="shrink"
     )
     parser.add_argument(
-        "-mc", 
-        "--mean_center",
-        default=False,
-        action='store_true',
-        help="mean center resulting images"
-    )
-    parser.add_argument(
-        "-mcuv", 
-        "--unit_variance",
+        "-norm", 
+        "--norm",
         default=False,
         action='store_true',
         help="mean center and unit variance"
