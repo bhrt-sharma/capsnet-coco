@@ -1,6 +1,7 @@
 import os
 import math
 import numpy as np
+from pycocotools.coco import COCO
 import skimage.io as io
 
 
@@ -15,6 +16,7 @@ class Dataset(object):
         self.shuffle = shuffle
 
         image_files = os.listdir(folder_name)
+        # coco = COCO()
 
         self.X = []
         self.y = []
