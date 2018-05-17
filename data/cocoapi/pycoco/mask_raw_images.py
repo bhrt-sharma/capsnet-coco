@@ -168,11 +168,12 @@ def main():
         help="shrink"
     )
 
+    args = parser.parse_args()
+    
     if args.shrink and not args.pad_to_square:
         print("Can only shrink when padding to square.")
         return
-
-    args = parser.parse_args()
+    
     mask_all(args)
 
 if __name__ == '__main__':
