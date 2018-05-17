@@ -10,7 +10,7 @@ All right boys let's do this.
 
 ## Training and such
 
-~The images are too large as they stand, so in order to make this tractable we should probably downsample to 64x64 or 128x128. ~
+~The images are too large as they stand, so in order to make this tractable we should probably downsample to 64x64 or 128x128.~
 
 0. Modify Dataset depending on how you guys want to load batches.
 1. Baseline: train a resnet model on the raw data, test on raw data. 
