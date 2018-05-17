@@ -14,20 +14,20 @@ TARGET_WIDTH = 640
 def getIdFromImage(file_name):
     return int(file_name.split("_")[-1].replace(".jpg", ""))
 
-# colorArray should be a single RGB slice
-def padImageToSquare(imArray, mode="mean"):
+def padImageToSquare(imArray, mode="edge"):
     length = imArray.shape[0]
     width = imArray.shape[1]
 
     length_diff = TARGET_LENGTH - length
     width_diff = TARGET_WIDTH - width 
 
-    pad_width = ((length_diff // 2, length_diff // 2), (width_diff // 2, width_diff // 2))
+    pad_width = ((length_diff // 2, length_diff // 2), (width_diff // 2, width_diff // 2), (0, 0))
     return np.pad(imArray, pad_width, mode)
 
-
 def shrinkSquareImage(imArray, size=128):
-    return resize(imArray, (size, size), anti_aliasing=True)
+    if len(imArray.shape) == 4:
+        return resize(imArray, (size, size, imArray[2], imArray[3]))
+    return resize(imArray, (size, size, imArray[2]))
 
 """
 @params:
