@@ -26,7 +26,7 @@ def padImageToSquare(imArray, mode="edge"):
 
 def shrinkSquareImage(imArray, size=128):
     if len(imArray.shape) == 4:
-        return resize(imArray, (size, size, imArray[2], imArray[3]))
+        return resize(imArray, (size, size, imArray.shape[2], imArray.shape[3]))
     return resize(imArray, (size, size, imArray[2]))
 
 """
