@@ -4,9 +4,9 @@ All right boys let's do this.
 
 ## Preprocessing
 
-~1. Modify `getGroundTruthMasks` in coco.py to also return non-polygon segments~
-~2. Add neutral grey background (instead of the black background? Not sure if this should theoretically make any difference).~
-~3. Figure out a detexturizing algorithm – either reduce contrast or add a small amount of gaussian blur.~
+1. ~Modify `getGroundTruthMasks` in coco.py to also return non-polygon segments~
+2. ~Add neutral grey background (instead of the black background? Not sure if this should theoretically make any difference).~
+3. ~Figure out a detexturizing algorithm – either reduce contrast or add a small amount of gaussian blur.~
 
 ## Training and such
 
