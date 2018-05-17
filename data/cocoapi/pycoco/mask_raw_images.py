@@ -1,13 +1,33 @@
-import argparse
-from PIL import Image, ImageDraw
-import numpy as np
 import os
+import argparse
+import numpy as np
+from PIL import Image, ImageDraw
 from pycocotools.coco import COCO
+from skimage.transform import resize
 from scipy.ndimage import imread, gaussian_filter
+
+
+TARGET_LENGTH = 640
+TARGET_WIDTH = 640
 
 
 def getIdFromImage(file_name):
     return int(file_name.split("_")[-1].replace(".jpg", ""))
+
+# colorArray should be a single RGB slice
+def padImageToSquare(imArray, mode="mean"):
+    length = imArray.shape[0]
+    width = imArray.shape[1]
+
+    length_diff = TARGET_LENGTH - length
+    width_diff = TARGET_WIDTH - width 
+
+    pad_width = ((length_diff, width_diff), (length_diff, width_diff))
+    return np.pad(imArray, pad_width, mode)
+
+
+def shrinkSquareImage(imArray, size=128):
+    return resize(imArray, (size, size), anti_aliasing=True)
 
 """
 @params:
@@ -17,7 +37,7 @@ def getIdFromImage(file_name):
 - saveTo is a folder to save the image to 
 - transparency determines whether the background is transparent (RGBA) or black (RGB)
 """
-def maskSegmentOut(im, seg, background_image, out_name, saveTo=".."):
+def maskSegmentOut(im, seg, background_image, out_name, saveTo="..", pad_to_square=False, shrink=False, grayscale=False):
     # convert to numpy (for convenience)
     imArray = np.asarray(im)
 
@@ -39,17 +59,32 @@ def maskSegmentOut(im, seg, background_image, out_name, saveTo=".."):
     # newImArray[newImArray[:,:,3] == 0] = 0
     newImArray[newImArray[:,:,3] == 0] = np.concatenate([background_image])
 
+    # pad to square and shrink
+    if pad_to_square:
+        newImArray = padImageToSquare(newImArray)
+        if shrink:
+            newImArray = shrinkSquareImage(newImArray)
+
     # gaussian filter 
     newImArray = gaussian_filter(newImArray[:, :, :3], 0.9)
-    
+
     # back to Image from numpy
-    newIm = Image.fromarray(newImArray[:, :, :3], "RGB")
+    if grayscale:
+        mode = "L"
+    else:
+        mode = "RGB"
+
+    newIm = Image.fromarray(newImArray[:, :, :3], mode)
 
     newIm.save("{}/{}.jpg".format(saveTo, out_name))
 
 def mask_all(args):
-    # decide which folder to output to
     dataset = args.dataset
+    pad_to_square = args.pad_to_square
+    shrink = args.shrink
+    black_and_white = args.black_and_white
+
+    # which folder to output to
     out_folder = "data/{}/images/masked".format(dataset)
 
     # initialize coco API
@@ -78,7 +113,7 @@ def mask_all(args):
     # then loop through to actually perform the masking 
     # this is done in RGBA and not RGB
     for pic in all_pics:
-        # get image 
+        # get image and compute mean
         I = imread("{}/{}".format(raw_folder, pic), mode="RGBA")
         background_image = np.mean(I, axis=(0, 1))
 
@@ -99,7 +134,10 @@ def mask_all(args):
                 seg, 
                 background_image,
                 pic.replace(".jpg", "") + "_{}".format(category_id), 
-                saveTo=out_folder
+                saveTo=out_folder,
+                pad_to_square=pad_to_square,
+                shrink=shrink,
+                grayscale=black_and_white
             )
 
 def main():
@@ -111,6 +149,29 @@ def main():
         help="which dataset to mask, of train, test, or val",
         choices=["train", "test", "val"]
     )
+    parser.add_argument(
+        "-bw", 
+        "--black_and_white",
+        default=False,
+        help="convert to grayscale"
+    )
+    parser.add_argument(
+        "-ps", 
+        "--pad_to_square",
+        default=False,
+        help="pad to square size"
+    )
+    parser.add_argument(
+        "-sh", 
+        "--shrink",
+        default=False,
+        help="shrink"
+    )
+
+    if args.shrink and not args.pad_to_square:
+        print("Can only shrink when padding to square.")
+        return
+
     args = parser.parse_args()
     mask_all(args)
 
