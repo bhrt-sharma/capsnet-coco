@@ -63,7 +63,7 @@ def maskSegmentOut(im, seg, background_image, out_name, saveTo="..", pad_to_squa
 
     # mean center and unit variance by RGB channel
     if normalize:
-        newImArray = np.mean(newImArray, axis=(0, 1)) / np.std(newImArray, axis=(0, 1))
+        newImArray = (newImArray - np.mean(newImArray, axis=(0, 1))) / np.std(newImArray, axis=(0, 1))
 
     # pad to square and shrink
     if pad_to_square:
