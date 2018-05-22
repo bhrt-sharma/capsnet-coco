@@ -61,7 +61,7 @@ To obtain the ground truth masks, simply:
 Note that the `-ps` and `-sh` flags pad images to a square size and shrink them to 64x64, respectively. 
 
 
-Images are named something like: "COCO_train2014_000000057870.jpg". The number at the end is the id. `mask_raw_images` will output masked images to, for example, `data/train/images/masked`, with a slightly amended file name, such as "COCO_train2014_000000057870_18.jpg". The extra number at the end is meant to denote the category id. We can then obtain the category itself by instantiating a COCO object and calling `coco.loadCats([ids])`. Category id 18 above for example, will return something like 
+Images are named something like: "COCO_train2014_000000057870.jpg". The number at the end is the id. `mask_raw_images` will output masked images to, for example, `data/train/images/masked`, with a slightly amended file name, such as `COCO_train2014_000000057870_18_2.jpg`. The extra numbers at the end is meant to denote the category id and the number of times we saw that category. In the previous example, we saw category 18 twice. We can then obtain the category itself by instantiating a COCO object and calling `coco.loadCats([ids])`. Category id 18 above for example, will return something like 
 
 `[{u'supercategory': u'animal', u'id': 18, u'name': u'dog'}]`
 
