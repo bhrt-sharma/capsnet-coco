@@ -134,13 +134,22 @@ def mask_all(args):
 
         # get segments from annotation
         segs = cc.getGroundTruthMasks(anns)
+
+        category_counts = {} # allow for duplicates in each image file name
         for tup in segs:
             category_id, seg = tup
+
+            # how many times have we seen this category id before in this image? 
+            # be sure to put it in the f_name
+            category_instance = category_counts.get(category_id, 1)
+            category_counts[category_id] = category_instance + 1
+
+            f_name = pic.replace(".jpg", "") + "_{}_{}".format(category_id, category_instance)
             maskSegmentOut(
                 I, 
                 seg, 
                 background_image,
-                pic.replace(".jpg", "") + "_{}".format(category_id), 
+                f_name, 
                 saveTo=out_folder,
                 pad_to_square=pad_to_square,
                 shrink=shrink,
