@@ -10,7 +10,7 @@ from torch.utils.data import sampler
 import torchvision.datasets as dset
 import torchvision.transforms as T
 
-from model import ResNet
+from models import ResNet
 
 import numpy as np
 
