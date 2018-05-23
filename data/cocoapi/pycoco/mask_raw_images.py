@@ -96,7 +96,7 @@ def mask_all(args):
     out_folder = "data/{}/images/masked".format(dataset)
     pics_already_masked = os.listdir(out_folder)
     pics_already_masked = [pic for pic in pics_already_masked if ".jpg" in pic]
-    pics_already_masked = set([pic.split("_")[0] + ".jpg" for pic in pics_already_masked])
+    pics_already_masked = set(["_".join(pic.split("_")[:3]) + ".jpg" for pic in pics_already_masked])
 
     # initialize coco API
     ann_file = 'data/{}/instances_{}2014.json'.format(dataset, dataset)
