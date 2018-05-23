@@ -76,3 +76,8 @@ trainset = Dataset("data/train/images/train2014")
 # trainset.X has the RGB image arrays 
 # trainset.y has the category ids
 ```
+
+
+# Acknowledgements
+
+We used [this repository's implementation](https://github.com/www0wwwjs1/Matrix-Capsules-EM-Tensorflow) of capsule networks with EM routing 
