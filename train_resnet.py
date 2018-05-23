@@ -1,61 +1,140 @@
-'''
-Assume images have already been preprocessed according to README file @ https://github.com/handrew/capsnet-coco
-
-ResNet based on this GitHub pytorch implementation: https://github.com/pytorch/vision/blob/master/torchvision/models/resnet.py
-
-TODO:
-Baseline: train a resnet model on the raw data, test on raw data.
-Baseline on masked, detexturized: train a resnet model on the detexturized, masked images, test on detexturized, masked images.
-'''
-
 import argparse
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from torch.autograd import Variable
 from torch.utils.data import DataLoader
 from torch.utils.data import sampler
 
 import torchvision.datasets as dset
-import torchvision.transforms as transformations
+import torchvision.transforms as T
+
+from model import ResNet
 
 import numpy as np
 
-from utils.dataset import Dataset
 
+parser = argparse.ArgumentParser()
+parser.add_argument('--data-dir', default='./dataset', type=str,
+                    help='path to dataset')
+parser.add_argument('--weight-decay', default=0.0001, type=float,
+                    help='parameter to decay weights')
+parser.add_argument('--batch-size', default=128, type=int,
+                    help='size of each batch of cifar-10 training images')
+parser.add_argument('--print-every', default=100, type=int,
+                    help='number of iterations to wait before printing')
+parser.add_argument('-n', default=5, type=int,
+                    help='value of n to use for resnet configuration (see https://arxiv.org/pdf/1512.03385.pdf for details)')
+parser.add_argument('--use-dropout', default=False, const=True, nargs='?',
+                    help='whether to use dropout in network')
+parser.add_argument('--res-option', default='A', type=str,
+                    help='which projection method to use for changing number of channels in residual connections')
 
-def main():
-	# Load images by instantiating a Dataset object.
+def main(args):
+    # define transforms for normalization and data augmentation
+    transform_augment = T.Compose([
+        T.RandomHorizontalFlip(),
+        T.RandomCrop(32, padding=4)])
+    transform_normalize = T.Compose([
+        T.ToTensor(),
+        T.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+    ])
+    # get CIFAR-10 data
+    NUM_TRAIN = 45000
+    NUM_VAL = 5000
+    cifar10_train = dset.CIFAR10('./dataset', train=True, download=True,
+                                 transform=T.Compose([transform_augment, transform_normalize]))
+    loader_train = DataLoader(cifar10_train, batch_size=args.batch_size,
+                              sampler=ChunkSampler(NUM_TRAIN))
+    cifar10_val = dset.CIFAR10('./dataset', train=True, download=True,
+                               transform=transform_normalize)
+    loader_val = DataLoader(cifar10_train, batch_size=args.batch_size,
+                            sampler=ChunkSampler(NUM_VAL, start=NUM_TRAIN))
+    cifar10_test = dset.CIFAR10('./dataset', train=False, download=True,
+                                transform=transform_normalize)
+    loader_test = DataLoader(cifar10_test, batch_size=args.batch_size)
+    
+    # load model
+    model = ResNet(args.n, res_option=args.res_option, use_dropout=args.use_dropout)
+    
+    param_count = get_param_count(model)
+    print('Parameter count: %d' % param_count)
+    
+    # use gpu for training
+    if not torch.cuda.is_available():
+        print('Error: CUDA library unavailable on system')
+        return
+    global gpu_dtype
+    gpu_dtype = torch.cuda.FloatTensor
+    model = model.type(gpu_dtype)
+    
+    # setup loss function
+    criterion = nn.CrossEntropyLoss().cuda()
+    # train model
+    SCHEDULE_EPOCHS = [50, 5, 5] # divide lr by 10 after each number of epochs
+#     SCHEDULE_EPOCHS = [100, 50, 50] # divide lr by 10 after each number of epochs
+    learning_rate = 0.1
+    for num_epochs in SCHEDULE_EPOCHS:
+        print('Training for %d epochs with learning rate %f' % (num_epochs, learning_rate))
+        optimizer = optim.SGD(model.parameters(), lr=learning_rate,
+                              momentum=0.9, weight_decay=args.weight_decay)
+        for epoch in range(num_epochs):
+            check_accuracy(model, loader_val)
+            print('Starting epoch %d / %d' % (epoch+1, num_epochs))
+            train(loader_train, model, criterion, optimizer)
+        learning_rate *= 0.1
+    
+    print('Final test accuracy:')
+    check_accuracy(model, loader_test)
 
-	# train_set.X has the RGB image arrays 
-	# train_set.y has the category ids
-	train_set = Dataset("data/train/images/train2014")
-	# val_set.X has the RGB image arrays 
-	# val_set.y has the category ids
-	val_set = Dataset("data/val/images/val2014")
-	# test_set.X has the RGB image arrays 
-	# test_set.y has the category ids
-	test_set = Dataset("data/test/images/test2014")
+def check_accuracy(model, loader):
+    num_correct = 0
+    num_samples = 0
+    model.eval()
+    for X, y in loader:
+        X_var = Variable(X.type(gpu_dtype), volatile=True)
 
+        scores = model(X_var)
+        _, preds = scores.data.cpu().max(1)
 
-	# MODULE API and SEQUENTIAL API used to implement ResNet
+        num_correct += (preds == y).sum()
+        num_samples += preds.size(0)
 
-	# 34 layer residual 
+    acc = float(num_correct) / num_samples
+    print('Got %d / %d correct (%.2f)' % (num_correct, num_samples, 100 * acc))
 
-	'''
-	When we use fully connected affine layers to process the image, however, we want each datapoint to be represented by a single vector -- it's no longer useful to segregate the different channels, rows, and columns of the data. So, we use a "flatten" operation to collapse the C x H x W values per representation into a single long vector. The flatten function below first reads in the N, C, H, and W values from a given batch of data, and then returns a "view" of that data. "View" is analogous to numpy's "reshape" method: it reshapes x's dimensions to be N x ??, where ?? is allowed to be anything (in this case, it will be C x H x W, but we don't need to specify that explicitly).
-	'''
+def train(loader_train, model, criterion, optimizer):
+    model.train()
+    for t, (X, y) in enumerate(loader_train):
+        X_var = Variable(X.type(gpu_dtype))
+        y_var = Variable(y.type(gpu_dtype)).long()
 
-	def flatten(x):
-	    N = x.shape[0] # read in N, C, H, W
-	    return x.view(N, -1)  # "flatten" the C * H * W values into a single vector per image
+        scores = model(X_var)
 
+        loss = criterion(scores, y_var)
+        if (t+1) % args.print_every == 0:
+            print('t = %d, loss = %.4f' % (t+1, loss.data[0]))
 
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
 
-	# PERFORM RELEVANT PREPROCESSING
+def get_param_count(model):
+    param_counts = [np.prod(p.size()) for p in model.parameters()]
+    return sum(param_counts)
 
-
-	# LOOK INTO WHAT IN_PLANES ARE AND OUT_PLANES
-
+class ChunkSampler(sampler.Sampler):
+    def __init__(self, num_samples, start=0):
+        self.num_samples = num_samples
+        self.start = start
+    
+    def __iter__(self):
+        return iter(range(self.start, self.start+self.num_samples))
+    
+    def __len__(self):
+        return self.num_samples
 
 if __name__ == '__main__':
-	main()
+    args = parser.parse_args()
+    main(args)
