@@ -16,18 +16,28 @@ class Dataset(object):
         self.shuffle = shuffle
 
         image_files = os.listdir(folder_name)
-        # coco = COCO()
+        image_files = [f for f in image_files if ".jpg" in f]
+
+        # if is_train:
+        #     coco = COCO()
+        # else:
+        #     coco = COCO()
 
         self.X = []
         self.y = []
 
         for img_file in image_files:
-            if ".jpg" in img_file:
-                img_arr = io.imread("{}/{}".format(folder_name, img_file))
-                category_id = img_file.split("_")[-1].replace(".jpg", "")
-                
-                self.X.append(img_arr)
-                self.y.append(category_id)
+            img_arr = io.imread("{}/{}".format(folder_name, img_file))
+
+            file_parts = img_file.split("_")
+            instance_seen = int(file_parts[-1].replace(".jpg", ""))
+            category_id = int(file_parts[-2])
+            
+            self.X.append(img_arr)
+            self.y.append(category_id)
+
+        self.X = np.asarray(self.X)
+        self.y = np.asarray(self.y)
 
     # def next_batch(self):
     #     """ Fetch the next batch. """
