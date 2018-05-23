@@ -90,9 +90,13 @@ def mask_all(args):
     shrink = args.shrink
     black_and_white = args.black_and_white
     normalize = args.norm
+    should_overwrite = args.overwrite
 
     # which folder to output to
     out_folder = "data/{}/images/masked".format(dataset)
+    pics_already_masked = os.listdir(out_folder)
+    pics_already_masked = [pic for pic in pics_already_masked if ".jpg" in pic]
+    pics_already_masked = set([pic.split("_")[0] + ".jpg" for pic in pics_already_masked])
 
     # initialize coco API
     ann_file = 'data/{}/instances_{}2014.json'.format(dataset, dataset)
@@ -120,6 +124,10 @@ def mask_all(args):
     # then loop through to actually perform the masking 
     # this is done in RGBA and not RGB
     for pic in all_pics:
+        if not overwrite and pic in pics_already_masked:
+            print("{} already masked.".format(pic))
+            continue
+
         # get image and compute mean
         I = imread("{}/{}".format(raw_folder, pic), mode="RGBA")
         background_image = np.mean(I, axis=(0, 1))
@@ -193,6 +201,13 @@ def main():
         default=False,
         action='store_true',
         help="mean center and unit variance"
+    )
+    parser.add_argument(
+        "-ow", 
+        "--overwrite",
+        default=False,
+        action='store_true',
+        help="if true, then overwrite files even if they exist already. if false, then check for existence"
     )
 
     args = parser.parse_args()
