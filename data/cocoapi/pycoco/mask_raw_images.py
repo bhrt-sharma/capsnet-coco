@@ -124,7 +124,7 @@ def mask_all(args):
     # then loop through to actually perform the masking 
     # this is done in RGBA and not RGB
     for pic in all_pics:
-        if not overwrite and pic in pics_already_masked:
+        if not should_overwrite and pic in pics_already_masked:
             print("{} already masked.".format(pic))
             continue
 
