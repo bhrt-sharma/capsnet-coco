@@ -1,26 +1,14 @@
 '''
-ASSUMPTIONS
+Assume images have already been preprocessed according to README file @ https://github.com/handrew/capsnet-coco
 
--images have already been preprocessed according to README file @ https://github.com/handrew/capsnet-coco
-- 
+ResNet based on this GitHub pytorch implementation: https://github.com/pytorch/vision/blob/master/torchvision/models/resnet.py
 
-
-DON'T FORGET TO DOWNSAMPLE IMAGES! The images are too large as they stand, so in order to make this tractable we should probably downsample to 64x64 or 128x128.
-
-Modify Dataset depending on how you guys want to load batches.
+TODO:
 Baseline: train a resnet model on the raw data, test on raw data.
-Baseline on masked: train a resnet model on the masked images, test on masked images.
 Baseline on masked, detexturized: train a resnet model on the detexturized, masked images, test on detexturized, masked images.
-Capsnet: train a capsnet model on the raw data, test on raw data.
-Capsnet on masked: train a capsnet model on the masked images, test on masked images.
-Baseline on masked, detexturized: train a capsnet model on the detexturized, masked images, test on detexturized, masked images.
-
-CITATIONS
-
--ResNet based on this GitHub pytorch implementation: https://github.com/pytorch/vision/blob/master/torchvision/models/resnet.py
-
 '''
 
+import argparse
 import torch
 import torch.nn as nn
 import torch.optim as optim
