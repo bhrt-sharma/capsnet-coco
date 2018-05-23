@@ -1,7 +1,6 @@
 import os
 import math
 import numpy as np
-from pycocotools.coco import COCO
 import skimage.io as io
 
 
@@ -17,11 +16,6 @@ class Dataset(object):
 
         image_files = os.listdir(folder_name)
         image_files = [f for f in image_files if ".jpg" in f]
-
-        # if is_train:
-        #     coco = COCO()
-        # else:
-        #     coco = COCO()
 
         self.X = []
         self.y = []
