@@ -2,6 +2,7 @@ import os
 import argparse
 import numpy as np
 from PIL import Image, ImageDraw
+from tqdm import tqdm
 from pycocotools.coco import COCO
 from skimage.transform import resize
 from scipy.ndimage import imread, gaussian_filter
@@ -144,7 +145,7 @@ def mask_all(args):
         segs = cc.getGroundTruthMasks(anns)
 
         category_counts = {} # allow for duplicates in each image file name
-        for tup in segs:
+        for tup in tqdm(segs):
             category_id, seg = tup
 
             # how many times have we seen this category id before in this image? 
