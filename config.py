@@ -75,13 +75,10 @@ def get_num_classes(dataset_name: str):
     return options[dataset_name]
 
 
-from utils import create_inputs_mnist, create_inputs_norb, create_inputs_cifar10, create_inputs_cifar100
+from utils import create_inputs_cifar10, create_inputs_mscoco
 
 
-def get_create_inputs(dataset_name: str, is_train: bool, epochs: int):
-    options = {'mnist': lambda: create_inputs_mnist(is_train),
-               'fashion_mnist': lambda: create_inputs_mnist(is_train),
-               'smallNORB': lambda: create_inputs_norb(is_train, epochs),
-               'cifar10': lambda: create_inputs_cifar10(is_train),
-               'cifa100': lambda: create_inputs_cifa100(is_train)}
+def get_create_inputs(dataset_name: str, is_train: bool, epochs: int, config):
+    options = {'mscoco': lambda: create_inputs_mscoco(is_train, config),
+               'cifar10': lambda: create_inputs_cifar10(is_train)}
     return options[dataset_name]

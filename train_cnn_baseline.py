@@ -32,7 +32,7 @@ def main(args):
     coord_add = get_coord_add(dataset_name)
     dataset_size = get_dataset_size_train(dataset_name)
     num_classes = get_num_classes(dataset_name)
-    create_inputs = get_create_inputs(dataset_name, is_train=True, epochs=cfg.epoch)
+    create_inputs = get_create_inputs(dataset_name, cfg, is_train=True, epochs=cfg.epoch)
 
     with tf.Graph().as_default(), tf.device('/cpu:0'):
         """Get global_step."""
