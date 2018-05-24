@@ -34,8 +34,8 @@ flags.DEFINE_string('dataset', 'data/mnist', 'the path for dataset')
 flags.DEFINE_string('dataset_fashion_mnist', 'data/fashion_mnist', 'the path for dataset')
 flags.DEFINE_boolean('is_train', True, 'train or predict phase')
 flags.DEFINE_integer('num_threads', 8, 'number of threads of enqueueing exampls')
-flags.DEFINE_string('logdir', 'logdir', 'logs directory')
-flags.DEFINE_string('test_logdir', 'test_logdir', 'test logs directory')
+flags.DEFINE_string('logdir', 'logs', 'logs directory')
+flags.DEFINE_string('test_logdir', 'test_logs', 'test logs directory')
 
 cfg = tf.app.flags.FLAGS
 
