@@ -23,7 +23,7 @@ def load_cifar10(is_training):
     else:
         return cifar10.load_data()[1]
 
-def create_inputs_cifar10(is_training, config):
+def create_inputs_mscoco(is_training, config):
     tr_x, tr_y = load_mscoco(is_training, config)
     data_queue = tf.train.slice_input_producer([tr_x, tr_y], capacity=64 * 8)
     x, y = tf.train.shuffle_batch(data_queue, num_threads=8, batch_size=config.batch_size, capacity=config.batch_size * 64,
