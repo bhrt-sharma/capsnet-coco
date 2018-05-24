@@ -124,7 +124,7 @@ def mask_all(args):
 
     # then loop through to actually perform the masking 
     # this is done in RGBA and not RGB
-    for pic in all_pics:
+    for pic in tqdm(all_pics):
         if not should_overwrite and pic in pics_already_masked:
             print("{} already masked.".format(pic))
             continue
@@ -145,7 +145,7 @@ def mask_all(args):
         segs = cc.getGroundTruthMasks(anns)
 
         category_counts = {} # allow for duplicates in each image file name
-        for tup in tqdm(segs):
+        for tup in segs:
             category_id, seg = tup
 
             # how many times have we seen this category id before in this image? 
