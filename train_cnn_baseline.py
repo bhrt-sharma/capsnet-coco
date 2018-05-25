@@ -1,13 +1,7 @@
-"""
-License: Apache-2.0
-Author: Suofei Zhang | Hang Yu
-
-Modified by Andrew Han
-"""
-
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
-from config import cfg, get_dataset_size_train, get_num_classes, get_create_inputs
+from config import cfg
+from utils import create_inputs_mscoco
 import time
 import numpy as np
 import sys
@@ -19,10 +13,6 @@ def main():
     """Set reproducible random seed"""
     tf.set_random_seed(1234)
 
-    dataset_size = get_dataset_size_train(dataset_name)
-    num_classes = get_num_classes(dataset_name)
-    create_inputs = get_create_inputs(dataset_name, cfg, is_train=True, epochs=cfg.epoch)
-
     with tf.Graph().as_default(), tf.device('/cpu:0'):
         """Get global_step."""
         global_step = tf.get_variable('global_step', [], initializer=tf.constant_initializer(0), trainable=False)
@@ -30,14 +20,17 @@ def main():
         """Get batches per epoch."""
         num_batches_per_epoch = int(dataset_size / cfg.batch_size)
 
-        """Use exponential decay leanring rate?"""
+        """Use exponential decay learning rate?"""
         lrn_rate = tf.maximum(tf.train.exponential_decay(1e-3, global_step, num_batches_per_epoch, 0.8), 1e-5)
         tf.summary.scalar('learning_rate', lrn_rate)
-        opt = tf.train.AdamOptimizer() 
+        opt = tf.train.AdamOptimizer(lrn_rate) 
 
         """Get batch from data queue."""
-        batch_x, batch_labels = create_inputs()
+        batch_x, batch_labels = create_inputs_mscoco(is_training, cfg)
         # batch_y = tf.one_hot(batch_labels, depth=10, axis=1, dtype=tf.float32)
+
+        dataset_size = batch_x.shape[0]
+        num_classes = max(batch_labels)
 
         """Define the dataflow graph."""
         with tf.device('/gpu:0'):
