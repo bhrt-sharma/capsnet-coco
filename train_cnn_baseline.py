@@ -7,27 +7,28 @@ import numpy as np
 import sys
 import os
 from tqdm import tqdm
-from models.cnn_baseline import build_cnn_baseline
+from models.cnn_baseline import build_cnn_baseline, cross_ent_loss
 
 
-def main():
+def main(args):
     tf.set_random_seed(1234)
 
     """ GET DATA """
     dataset = load_mscoco('train', cfg, return_dataset=True)
     N, D = dataset.X.shape[0], dataset.X.shape[1]
-    num_classes = max(dataset.y)
+    num_classes = int(max(dataset.y))
     num_batches_per_epoch = int(N / cfg.batch_size)
 
     """ SET UP INITIAL VARIABLES"""
     initial_learning_rate = 1e-3 # maybe move this to config?
+    global_step = tf.get_variable('global_step', [], initializer=tf.constant_initializer(0), trainable=False)
     lrn_rate = tf.maximum(tf.train.exponential_decay(initial_learning_rate, global_step, num_batches_per_epoch, 0.8), 1e-5)
     tf.summary.scalar('learning_rate', lrn_rate)
-    opt = tf.train.AdamOptimizer(lrn_rate) 
-    global_step = tf.get_variable('global_step', [], initializer=tf.constant_initializer(0), trainable=False)
+    opt = tf.train.AdamOptimizer(lrn_rate)
 
     """ DEFINE DATA FLOW """
     batch_x = tf.placeholder(tf.float32, shape=(cfg.batch_size, D, D, 3))
+    batch_labels = tf.placeholder(tf.int32, shape=(cfg.batch_size))
     batch_x_squash = tf.divide(batch_x, 255.)
     batch_x = slim.batch_norm(batch_x, center=False, is_training=True, trainable=True)
     output = build_cnn_baseline(batch_x, is_train=True, num_classes=num_classes)
@@ -63,10 +64,11 @@ def main():
                 cfg.logdir + '/cnn_baseline/{}/train_log/'.format(dataset_name), graph=sess.graph)
 
             """Main loop"""
-            for _ in tqdm(list(range(cfg.num_epochs)), desc='epoch'):
-                for _ in tqdm(list(range(dataset.num_batches)), desc='batch'):
+            for e in tqdm(list(range(cfg.num_epochs)), desc='epoch'):
+                for b in tqdm(list(range(dataset.num_batches)), desc='batch'):
+                    print(e, b)
                     batch = dataset.next_batch()
-                    feed_dict = {images: batch}
+                    feed_dict = {images: batch.X, batch_labels: batch.y}
                     _, loss_value, summary_str = sess.run([train_op, loss, summary_op], feed_dict=feed_dict)
                     train_writer.add_summary(summary, global_step)
                 dataset.reset()

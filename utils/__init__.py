@@ -6,11 +6,12 @@ import tensorflow as tf
 from config import cfg
 from keras.datasets import cifar10, cifar100
 from keras import backend as K
+from .dataset import Dataset
 
 def load_mscoco(dataset_type, config, return_dataset=False):
     if dataset_type == 'train':
         if config.use_masked:
-            data = Dataset("data/train/images/masked")
+            data = Dataset("data/train/images/masked", num=50)
         else:
             data = Dataset("data/train/images/train2014")
     elif dataset_type == 'test':
