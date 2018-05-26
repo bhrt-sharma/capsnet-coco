@@ -22,7 +22,7 @@ def main(args):
     """ SET UP INITIAL VARIABLES"""
     learning_rate = tf.constant(cfg.initial_learning_rate)
     opt = tf.train.AdamOptimizer(cfg.initial_learning_rate)
-    global_step = tf.get_variable('global_step', [], initializer=tf.constant_initializer(0), trainable=False)
+    global_step = tf.Variable(0, name='global_step', trainable=False)
     # tf.summary.scalar('learning_rate', lrn_rate)
 
     """ DEFINE DATA FLOW """
@@ -39,20 +39,22 @@ def main(args):
     tf.summary.scalar('all_loss', loss)
 
     """Compute gradient."""
-    opt_op = tf.contrib.layers.optimize_loss(
-                loss = loss,
-                global_step = global_step,
-                learning_rate = learning_rate,
-                optimizer = optimizer,
-                clip_gradients = False,
-                learning_rate_decay_fn = tf.maximum(tf.train.exponential_decay(
+    def _learning_rate_decay_fn(learning_rate, global_step):
+        return tf.maximum(tf.train.exponential_decay(
                         learning_rate,
                         global_step,
                         decay_steps = num_batches_per_epoch,
                         decay_rate = 0.8,
                         staircase = True
                     ), 1e-5)
-                )
+
+    opt_op = tf.contrib.layers.optimize_loss(
+                loss = loss,
+                global_step = global_step,
+                learning_rate = learning_rate,
+                optimizer = opt,
+                # clip_gradients = False,
+                learning_rate_decay_fn = _learning_rate_decay_fn)
 
     summary_op = tf.summary.merge_all()
 
@@ -72,11 +74,10 @@ def main(args):
             """Main loop"""
             for e in tqdm(list(range(cfg.num_epochs)), desc='epoch'):
                 for b in tqdm(list(range(num_batches_per_epoch)), desc='batch'):
-                    print(e, b)
                     batch = dataset.next_batch()
                     feed_dict = {batch_x: batch[0].astype(np.float32), batch_labels: batch[1]}
-                    _, loss_value, summary_str = sess.run([train_op, loss, summary_op], feed_dict=feed_dict)
-                    train_writer.add_summary(summary, global_step)
+                    _, loss_value, summary_str, step_out = sess.run([opt_op, loss, summary_op, global_step], feed_dict=feed_dict)
+                    summary_writer.add_summary(summary_str, step_out)
                 dataset.reset()
 
 if __name__ == "__main__":
