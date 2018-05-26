@@ -20,11 +20,10 @@ def main(args):
     num_batches_per_epoch = int(N / cfg.batch_size)
 
     """ SET UP INITIAL VARIABLES"""
-    initial_learning_rate = 1e-3 # maybe move this to config?
+    learning_rate = tf.constant(cfg.initial_learning_rate)
+    opt = tf.train.AdamOptimizer(cfg.initial_learning_rate)
     global_step = tf.get_variable('global_step', [], initializer=tf.constant_initializer(0), trainable=False)
-    lrn_rate = tf.maximum(tf.train.exponential_decay(initial_learning_rate, global_step, num_batches_per_epoch, 0.8), 1e-5)
-    tf.summary.scalar('learning_rate', lrn_rate)
-    opt = tf.train.AdamOptimizer(lrn_rate)
+    # tf.summary.scalar('learning_rate', lrn_rate)
 
     """ DEFINE DATA FLOW """
     batch_x = tf.placeholder(tf.float32, shape=(cfg.batch_size, D, D, 3), name="input")
@@ -40,15 +39,20 @@ def main(args):
     tf.summary.scalar('all_loss', loss)
 
     """Compute gradient."""
-    grad = opt.compute_gradients(loss)
-    grad_check = [tf.check_numerics(g, message='Gradient NaN Found!')
-                  for g, _ in grad if g is not None] + [tf.check_numerics(loss, message='Loss NaN Found')]
-
-    """Apply gradient."""
-    with tf.control_dependencies(grad_check):
-        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-        with tf.control_dependencies(update_ops):
-            train_op = opt.apply_gradients(grad, global_step=global_step)
+    opt_op = tf.contrib.layers.optimize_loss(
+                loss = loss,
+                global_step = global_step,
+                learning_rate = learning_rate,
+                optimizer = optimizer,
+                clip_gradients = False,
+                learning_rate_decay_fn = tf.maximum(tf.train.exponential_decay(
+                        learning_rate,
+                        global_step,
+                        decay_steps = num_batches_per_epoch,
+                        decay_rate = 0.8,
+                        staircase = True
+                    ), 1e-5)
+                )
 
     summary_op = tf.summary.merge_all()
 
