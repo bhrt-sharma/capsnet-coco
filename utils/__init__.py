@@ -11,19 +11,19 @@ from .dataset import Dataset
 def load_mscoco(dataset_type, config, return_dataset=False):
     if dataset_type == 'train':
         if config.use_masked:
-            data = Dataset("data/train/images/masked", num=50)
+            data = Dataset("data/train/images/masked", is_train=True, batch_size=config.batch_size, num=50)
         else:
-            data = Dataset("data/train/images/train2014")
+            data = Dataset("data/train/images/train2014", batch_size=config.batch_size, is_train=True)
     elif dataset_type == 'test':
         if config.use_masked:
-            data = Dataset("data/test/images/masked")
+            data = Dataset("data/test/images/masked", batch_size=config.batch_size)
         else:
-            data = Dataset("data/test/images/test2014")
+            data = Dataset("data/test/images/test2014", batch_size=config.batch_size)
     elif dataset_type == 'val':
         if config.use_masked:
-            data = Dataset("data/val/images/masked")
+            data = Dataset("data/val/images/masked", batch_size=config.batch_size)
         else:
-            data = Dataset("data/val/images/val2014")
+            data = Dataset("data/val/images/val2014", batch_size=config.batch_size)
     else:
         raise ValueError("Dataset type must be one of 'train', 'test', or 'val'")
 
@@ -39,4 +39,12 @@ def create_inputs_mscoco(is_training, config):
     x, y = tf.train.shuffle_batch(data_queue, num_threads=8, batch_size=config.batch_size, capacity=config.batch_size * 64,
                                   min_after_dequeue=config.batch_size * 32, allow_smaller_final_batch=False)
     return (x, y)
+
+def test_accuracy(logits, labels):
+    logits_idx = tf.to_int32(tf.argmax(logits, axis=1))
+    logits_idx = tf.reshape(logits_idx, shape=(cfg.batch_size,))
+    correct_preds = tf.equal(tf.to_int32(labels), logits_idx)
+    accuracy = tf.reduce_sum(tf.cast(correct_preds, tf.float32)) / cfg.batch_size
+
+    return accuracy
 

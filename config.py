@@ -10,7 +10,7 @@ flags.DEFINE_float('ac_lambda_step', 0.01,
                    'It is described that \lambda increases at each iteration with a fixed schedule, however specific super parameters is absent.')
 
 flags.DEFINE_integer('batch_size', 50, 'batch size')
-flags.DEFINE_integer('epoch', 50, 'number of epochs')
+flags.DEFINE_integer('num_epochs', 50, 'number of epochs')
 flags.DEFINE_integer('iter_routing', 2, 'number of iterations')
 flags.DEFINE_float('m_schedule', 0.2, 'the m will get to 0.9 at current epoch')
 flags.DEFINE_float('epsilon', 1e-9, 'epsilon')
@@ -32,11 +32,10 @@ flags.DEFINE_integer('D', 16, 'number of channels in output from ConvCaps2')
 ############################
 flags.DEFINE_string('dataset', 'data/mnist', 'the path for dataset')
 flags.DEFINE_boolean('use_masked', True, 'whether or not to use masked images')
-flags.DEFINE_boolean('is_train', True, 'train or predict phase')
+flags.DEFINE_string('phase', 'train', 'train or predict phase')
 flags.DEFINE_integer('num_threads', 8, 'number of threads of enqueueing exampls')
 flags.DEFINE_string('logdir', 'logs', 'logs directory')
 flags.DEFINE_string('test_logdir', 'test_logs', 'test logs directory')
 
 cfg = tf.app.flags.FLAGS
-
 

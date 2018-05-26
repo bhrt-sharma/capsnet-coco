@@ -20,7 +20,7 @@ def cross_ent_loss(output, x, y):
     with tf.variable_scope('decoder'):
         output = slim.fully_connected(output, 512, trainable=True)
         output = slim.fully_connected(output, 1024, trainable=True)
-        output = slim.fully_connected(output, data_size * data_size,
+        output = slim.fully_connected(output, data_size * data_size * 3,
                                       trainable=True, activation_fn=tf.sigmoid)
 
         x = tf.reshape(x, shape=[batch_size, -1])

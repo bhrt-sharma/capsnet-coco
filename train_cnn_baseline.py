@@ -1,7 +1,7 @@
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
 from config import cfg
-from utils import create_inputs_mscoco, load_mscoco
+from utils import create_inputs_mscoco, load_mscoco, test_accuracy
 import time
 import numpy as np
 import sys
@@ -14,7 +14,7 @@ def main(args):
     tf.set_random_seed(1234)
 
     """ GET DATA """
-    dataset = load_mscoco('train', cfg, return_dataset=True)
+    dataset = load_mscoco(cfg.phase, cfg, return_dataset=True)
     N, D = dataset.X.shape[0], dataset.X.shape[1]
     num_classes = int(max(dataset.y))
     num_batches_per_epoch = int(N / cfg.batch_size)
@@ -27,11 +27,11 @@ def main(args):
     opt = tf.train.AdamOptimizer(lrn_rate)
 
     """ DEFINE DATA FLOW """
-    batch_x = tf.placeholder(tf.float32, shape=(cfg.batch_size, D, D, 3))
-    batch_labels = tf.placeholder(tf.int32, shape=(cfg.batch_size))
+    batch_x = tf.placeholder(tf.float32, shape=(cfg.batch_size, D, D, 3), name="input")
+    batch_labels = tf.placeholder(tf.int32, shape=(cfg.batch_size), name="labels")
     batch_x_squash = tf.divide(batch_x, 255.)
-    batch_x = slim.batch_norm(batch_x, center=False, is_training=True, trainable=True)
-    output = build_cnn_baseline(batch_x, is_train=True, num_classes=num_classes)
+    batch_x_norm = slim.batch_norm(batch_x, center=False, is_training=True, trainable=True)
+    output = build_cnn_baseline(batch_x_norm, is_train=True, num_classes=num_classes)
     loss, recon_loss, _ = cross_ent_loss(output, batch_x_squash, batch_labels)
     acc = test_accuracy(output, batch_labels)
     
@@ -50,6 +50,8 @@ def main(args):
         with tf.control_dependencies(update_ops):
             train_op = opt.apply_gradients(grad, global_step=global_step)
 
+    summary_op = tf.summary.merge_all()
+
     """ RUN GRAPH """
     with tf.Session() as sess:
         if cfg.phase == 'train':
@@ -58,17 +60,17 @@ def main(args):
             tf.get_default_graph().finalize()
 
             """Set summary writer"""
-            if not os.path.exists(cfg.logdir + '/cnn_baseline/{}/train_log/'.format(dataset_name)):
-                os.makedirs(cfg.logdir + '/cnn_baseline/{}/train_log/'.format(dataset_name))
+            if not os.path.exists(cfg.logdir + '/cnn_baseline/{}_images/train_log/'.format(cfg.phase)):
+                os.makedirs(cfg.logdir + '/cnn_baseline/{}_images/train_log/'.format(cfg.phase))
             summary_writer = tf.summary.FileWriter(
-                cfg.logdir + '/cnn_baseline/{}/train_log/'.format(dataset_name), graph=sess.graph)
+                cfg.logdir + '/cnn_baseline/{}_images/train_log/'.format(cfg.phase), graph=sess.graph)
 
             """Main loop"""
             for e in tqdm(list(range(cfg.num_epochs)), desc='epoch'):
-                for b in tqdm(list(range(dataset.num_batches)), desc='batch'):
+                for b in tqdm(list(range(num_batches_per_epoch)), desc='batch'):
                     print(e, b)
                     batch = dataset.next_batch()
-                    feed_dict = {images: batch.X, batch_labels: batch.y}
+                    feed_dict = {batch_x: batch[0].astype(np.float32), batch_labels: batch[1]}
                     _, loss_value, summary_str = sess.run([train_op, loss, summary_op], feed_dict=feed_dict)
                     train_writer.add_summary(summary, global_step)
                 dataset.reset()

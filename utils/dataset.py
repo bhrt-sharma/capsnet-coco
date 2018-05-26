@@ -8,22 +8,24 @@ class Dataset(object):
     def __init__(self, 
                  folder_name, 
                  batch_size=64, 
-                 is_train=False, 
+                 is_train=True, 
                  num=None,
                  shuffle=True):
         self.folder_name = folder_name
         self.batch_size = batch_size
         self.shuffle = shuffle
+        self.current_idx = 0
+        self.is_train = is_train
 
         image_files = os.listdir(folder_name)
-        image_files = [f for f in image_files if ".jpg" in f]
+        self.image_files = [f for f in image_files if ".jpg" in f]
         if type(num) == int:
-            image_files = [image_files[f] for f in range(num)]
+            self.image_files = [self.image_files[f] for f in range(num)]
 
         self.X = []
         self.y = []
 
-        for img_file in image_files:
+        for img_file in self.image_files:
             img_arr = io.imread("{}/{}".format(folder_name, img_file))
 
             file_parts = img_file.split("_")
@@ -35,6 +37,16 @@ class Dataset(object):
 
         self.X = np.asarray(self.X)
         self.y = np.asarray(self.y)
+
+        self.setup()
+
+    def setup(self):
+        """ Setup the dataset. """
+        self.count = len(self.image_files)
+        self.num_batches = int(np.ceil(self.count * 1.0 / self.batch_size))
+        self.fake_count = self.num_batches * self.batch_size - self.count
+        self.idxs = list(range(self.count))
+        self.reset()
 
     def next_batch(self):
          """ Fetch the next batch. """
@@ -49,11 +61,11 @@ class Dataset(object):
              current_idxs = self.idxs[start:end] + \
                             list(np.random.choice(self.count, self.fake_count))
 
-         imgs = self.X[current_idxs]
+         image_files = self.X[current_idxs]
          if self.is_train:
              categories = self.y[current_idxs]
              self.current_idx += self.batch_size
-             return image_files, word_idxs, masks
+             return image_files, categories
          else:
              self.current_idx += self.batch_size
              return image_files
@@ -65,3 +77,9 @@ class Dataset(object):
     def has_full_next_batch(self):
          """ Determine whether there is a full batch left. """
          return self.current_idx + self.batch_size <= self.count
+
+    def reset(self):
+        """ Reset the dataset. """
+        self.current_idx = 0
+        if self.shuffle:
+            np.random.shuffle(self.idxs)
