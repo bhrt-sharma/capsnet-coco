@@ -10,7 +10,7 @@ from torch.utils.data import sampler
 import torchvision.datasets as dset
 import torchvision.transforms as T
 
-from models import ResNet
+from models import resnet
 
 import numpy as np
 
@@ -40,21 +40,30 @@ def main(args):
         T.ToTensor(),
         T.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
     ])
-    # get CIFAR-10 data
-    NUM_TRAIN = 45000
-    NUM_VAL = 5000
-    cifar10_train = dset.CIFAR10('./dataset', train=True, download=True,
+    # get MSCOCO Data
+
+    # FIX NUM_TRAIN AND NUM_VAL
+    NUM_TRAIN = 82783
+    NUM_VAL = 40504
+    print('REACHING')
+    coco_train = dset.coco('./dataset', train=True, download=True,
                                  transform=T.Compose([transform_augment, transform_normalize]))
-    loader_train = DataLoader(cifar10_train, batch_size=args.batch_size,
+    loader_train = DataLoader(coco_train, batch_size=args.batch_size,
                               sampler=ChunkSampler(NUM_TRAIN))
-    cifar10_val = dset.CIFAR10('./dataset', train=True, download=True,
+    print('REACHING')
+
+    coco_val = dset.CIFAR10('./dataset', train=True, download=True,
                                transform=transform_normalize)
-    loader_val = DataLoader(cifar10_train, batch_size=args.batch_size,
+    loader_val = DataLoader(coco_train, batch_size=args.batch_size,
                             sampler=ChunkSampler(NUM_VAL, start=NUM_TRAIN))
-    cifar10_test = dset.CIFAR10('./dataset', train=False, download=True,
+    coco_test = dset.coco('./dataset', train=False, download=True,
                                 transform=transform_normalize)
-    loader_test = DataLoader(cifar10_test, batch_size=args.batch_size)
+    loader_test = DataLoader(coco_test, batch_size=args.batch_size)
     
+
+
+
+
     # load model
     model = ResNet(args.n, res_option=args.res_option, use_dropout=args.use_dropout)
     
