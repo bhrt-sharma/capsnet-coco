@@ -11,7 +11,7 @@ from .dataset import Dataset
 def load_mscoco(dataset_type, config, return_dataset=False):
     if dataset_type == 'train':
         if config.use_masked:
-            data = Dataset("data/train/images/masked", is_train=True, batch_size=config.batch_size, num=50)
+            data = Dataset("data/train/images/masked", is_train=True, batch_size=config.batch_size, num=1000)
         else:
             data = Dataset("data/train/images/train2014", batch_size=config.batch_size, is_train=True)
     elif dataset_type == 'test':
