@@ -1,5 +1,6 @@
 import os
 from tqdm import tqdm
+import json
 import numpy as np
 import pdb
 
@@ -8,9 +9,25 @@ TRAIN_FOLDER = 'data/train/images/final/'
 VAL_FOLDER = 'data/val/images/final/'
 TEST_FOLDER = 'data/test/images/final/'
 
+DIRECTORY_JSON = 'data/train_test_val_split.json'
+
 
 def copy_files_over():
-    pass
+    with open(DIRECTORY_JSON, "r") as f:
+        dataset_split = json.load(f)
+    train_files = dataset_split['train']
+    val_files = dataset_split['val']
+    test_files = dataset_split['test']
+
+    for f in tqdm(train_files, desc="copying train files"):
+        os.system("cp {}/{} {}".format(ORIGIN_FOLDER, f_name, TRAIN_FOLDER))
+
+    for f in tqdm(val_files, desc="copying val files"):
+        os.system("cp {}/{} {}".format(ORIGIN_FOLDER, f_name, VAL_FOLDER))
+
+    for f in tqdm(test_files, desc="copying test files"):
+        os.system("cp {}/{} {}".format(ORIGIN_FOLDER, f_name, TEST_FOLDER))
+
 
 def get_train_test_val_info():
     train_files = os.listdir(TRAIN_FOLDER)
@@ -21,10 +38,9 @@ def get_train_test_val_info():
     val_files = [f for f in val_files if '.jpg' in f]
     test_files = [f for f in test_files if '.jpg' in f]
 
-    import json
     print("Dumping.")
     file_names = {"train": train_files, "val": val_files, "test": test_files}
-    with open("train_test_val_split.json", "w+") as f:
+    with open(DIRECTORY_JSON, "w+") as f:
         json.dump(file_names, f)
 
 
@@ -81,5 +97,6 @@ def shuffle():
 
 
 if __name__ == '__main__':
-    shuffle()
-    get_train_test_val_info()
+    # shuffle()
+    # get_train_test_val_info()
+    copy_files_over()
