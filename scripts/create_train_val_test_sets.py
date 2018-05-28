@@ -19,13 +19,13 @@ def copy_files_over():
     val_files = dataset_split['val']
     test_files = dataset_split['test']
 
-    for f in tqdm(train_files, desc="copying train files"):
+    for f_name in tqdm(train_files, desc="copying train files"):
         os.system("cp {}/{} {}".format(ORIGIN_FOLDER, f_name, TRAIN_FOLDER))
 
-    for f in tqdm(val_files, desc="copying val files"):
+    for f_name in tqdm(val_files, desc="copying val files"):
         os.system("cp {}/{} {}".format(ORIGIN_FOLDER, f_name, VAL_FOLDER))
 
-    for f in tqdm(test_files, desc="copying test files"):
+    for f_name in tqdm(test_files, desc="copying test files"):
         os.system("cp {}/{} {}".format(ORIGIN_FOLDER, f_name, TEST_FOLDER))
 
 
