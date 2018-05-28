@@ -20,6 +20,7 @@ def main(_):
     with tf.device('/cpu:0'):
       global_step = tf.train.get_or_create_global_step()
 
+    images, labels = train_dataset.X.astype(np.float32), train_dataset.y
     poses, activations = nets.capsules_v0(images, num_classes=91, iterations=1, name='capsulesEM-V0')
 
     # margin schedule
@@ -28,7 +29,7 @@ def main(_):
     margin = tf.train.piecewise_constant(
       tf.cast(global_step, dtype=tf.int32),
       boundaries=[
-        int(num_steps_per_epoch * margin_schedule_epoch_achieve_max * x / 7) for x in xrange(1, 8)
+        int(num_steps_per_epoch * margin_schedule_epoch_achieve_max * x / 7) for x in range(1, 8)
       ],
       values=[
         x / 10.0 for x in range(2, 10)
