@@ -32,14 +32,6 @@ def load_mscoco(dataset_type, config, num=None, return_dataset=False):
 
     return (data.X, data.y)
 
- 
-def create_inputs_mscoco(is_training, config):
-    tr_x, tr_y = load_mscoco(is_training, config)
-    data_queue = tf.train.slice_input_producer([tr_x, tr_y], capacity=64 * 8)
-    x, y = tf.train.shuffle_batch(data_queue, num_threads=8, batch_size=config.batch_size, capacity=config.batch_size * 64,
-                                  min_after_dequeue=config.batch_size * 32, allow_smaller_final_batch=False)
-    return (x, y)
-
 def test_accuracy(logits, labels):
     logits_idx = tf.to_int32(tf.argmax(logits, axis=1))
     logits_idx = tf.reshape(logits_idx, shape=(cfg.batch_size,))

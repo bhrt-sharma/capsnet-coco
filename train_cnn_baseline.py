@@ -1,7 +1,7 @@
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
 from config import cfg
-from utils import create_inputs_mscoco, load_mscoco, test_accuracy
+from utils import load_mscoco, test_accuracy
 import time
 import numpy as np
 import sys
