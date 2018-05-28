@@ -21,11 +21,11 @@ def get_train_test_val():
 	val_files = [f for f in val_files if '.jpg' in f]
 	test_files = [f for f in test_files if '.jpg' in f]
 
-    import json
-    print("Dumping.")
-    file_names = {"train": train_files, "val": val_files, "test": test_files}
-    with open("train_test_val_split.json", "w+") as f:
-    	json.dump(file_names, f)
+	import json
+	print("Dumping.")
+	file_names = {"train": train_files, "val": val_files, "test": test_files}
+	with open("train_test_val_split.json", "w+") as f:
+		json.dump(file_names, f)
 
 
 def shuffle():
