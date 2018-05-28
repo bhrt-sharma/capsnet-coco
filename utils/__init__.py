@@ -10,20 +10,11 @@ from .dataset import Dataset
 
 def load_mscoco(dataset_type, config, num=None, return_dataset=False):
     if dataset_type == 'train':
-        if config.use_masked:
-            data = Dataset("data/train/images/masked", is_train=True, batch_size=config.batch_size, num=num)
-        else:
-            data = Dataset("data/train/images/train2014", batch_size=config.batch_size, num=num, is_train=True)
+        data = Dataset("data/train/images/final", is_train=True, batch_size=config.batch_size, num=num)
     elif dataset_type == 'test':
-        if config.use_masked:
-            data = Dataset("data/test/images/masked", batch_size=config.batch_size, num=num)
-        else:
-            data = Dataset("data/test/images/test2014", batch_size=config.batch_size, num=num)
+        data = Dataset("data/test/images/final", batch_size=config.batch_size, num=num)
     elif dataset_type == 'val':
-        if config.use_masked:
-            data = Dataset("data/val/images/masked", batch_size=config.batch_size, num=num)
-        else:
-            data = Dataset("data/val/images/val2014", batch_size=config.batch_size, num=num)
+        data = Dataset("data/val/images/final", batch_size=config.batch_size, num=num)
     else:
         raise ValueError("Dataset type must be one of 'train', 'test', or 'val'")
 
