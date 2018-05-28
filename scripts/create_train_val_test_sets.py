@@ -58,7 +58,11 @@ def shuffle():
         num_val_files_to_get = num_val // num_categories
         num_test_files_to_get = num_test // num_categories
 
-        assert num_train_files_to_get + num_val_files_to_get + num_test_files_to_get < len(images)
+        total_num = num_train_files_to_get + num_val_files_to_get + num_test_files_to_get
+        if total_num >= len(images):
+            num_train_files_to_get = int(len(images) * num_train_files_to_get / total_num)
+            num_val_files_to_get = int(len(images) * num_val_files_to_get / total_num)
+            num_test_files_to_get = int(len(images) * num_test_files_to_get / total_num)
 
         print("Getting {} train files for category {}.".format(num_train_files_to_get, category))
         for tr in range(num_train_files_to_get):
