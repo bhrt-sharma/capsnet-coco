@@ -54,17 +54,15 @@ To obtain the ground truth masks, simply:
 
 `python data/cocoapi/pycoco/mask_raw_images.py -ds train -ps -sh`
 
-`python data/cocoapi/pycoco/mask_raw_images.py -ds val -ps -sh`
-
-`python data/cocoapi/pycoco/mask_raw_images.py -ds test -ps -sh` 
-
-Note that the `-ps` and `-sh` flags pad images to a square size and shrink them to 64x64, respectively. 
-
+Note that the `-ps` and `-sh` flags pad images to a square size and shrink them to 48x48, respectively. 
 
 Images are named something like: "COCO_train2014_000000057870.jpg". The number at the end is the id. `mask_raw_images` will output masked images to, for example, `data/train/images/masked`, with a slightly amended file name, such as `COCO_train2014_000000057870_18_2.jpg`. The extra numbers at the end is meant to denote the category id and the number of times we saw that category. In the previous example, we saw category 18 twice. We can then obtain the category itself by instantiating a COCO object and calling `coco.loadCats([ids])`. Category id 18 above for example, will return something like 
 
 `[{u'supercategory': u'animal', u'id': 18, u'name': u'dog'}]`
 
+Finally, run 
+
+`python scripts/create_train_val_test_set.py` 
 
 # Training 
 
@@ -72,7 +70,7 @@ Load images by instantiating a Dataset object.
 
 ```
 from dataset import Dataset
-trainset = Dataset("data/train/images/train2014")
+trainset = Dataset("data/train/images/final")
 # trainset.X has the RGB image arrays 
 # trainset.y has the category ids
 ```
@@ -80,4 +78,4 @@ trainset = Dataset("data/train/images/train2014")
 
 # Acknowledgements
 
-We used [this repository's implementation](https://github.com/www0wwwjs1/Matrix-Capsules-EM-Tensorflow) of capsule networks with EM routing 
+We used [this repository's implementation](https://github.com/gyang274/capsulesEM) of capsule networks with EM routing.
