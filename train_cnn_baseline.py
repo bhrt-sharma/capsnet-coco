@@ -15,6 +15,8 @@ def main(args):
 
     """ GET DATA """
     dataset = load_mscoco(cfg.phase, cfg, return_dataset=True)
+    dataset_name = 'mscoco'
+    checkpoints_to_keep = 1
     N, D = dataset.X.shape[0], dataset.X.shape[1]
     num_classes = 91
     print("\nNum classes", num_classes)
@@ -24,7 +26,7 @@ def main(args):
     learning_rate = tf.constant(cfg.initial_learning_rate)
     opt = tf.train.AdamOptimizer(cfg.initial_learning_rate)
     global_step = tf.Variable(0, name='global_step', trainable=False)
-    # tf.summary.scalar('learning_rate', lrn_rate)
+    tf.summary.scalar('learning_rate', lrn_rate)
 
     """ DEFINE DATA FLOW """
     batch_x = tf.placeholder(tf.float32, shape=(cfg.batch_size, D, D, 3), name="input")
@@ -56,6 +58,13 @@ def main(args):
                 # clip_gradients = False,
                 learning_rate_decay_fn = _learning_rate_decay_fn)
 
+    # set best checkpoint
+    bestmodel_dir = os.path.join(cfg.logdir + 'cnn_baseline/', 'best_checkpoint')
+    if not os.path.exists(bestmodel_dir):
+        os.makedirs(bestmodel_dir)
+    bestmodel_ckpt_path = os.path.join(bestmodel_dir, "cnn_best.ckpt")
+    train_saver = tf.train.Saver(tf.global_variables(), max_to_keep = checkpoints_to_keep)
+    bestmodel_saver = tf.train.Saver(tf.global_variables(), max_to_keep = checkpoints_to_keep)
     summary_op = tf.summary.merge_all()
 
     """ RUN GRAPH """
@@ -71,7 +80,9 @@ def main(args):
             summary_writer = tf.summary.FileWriter(
                 cfg.logdir + '/cnn_baseline/{}_images/train_log/'.format(cfg.phase), graph=sess.graph)
 
+
             """Main loop"""
+            best_loss = None
             for e in list(range(cfg.num_epochs)):
                 for b in list(range(num_batches_per_epoch)):
                     batch = dataset.next_batch()
@@ -80,6 +91,17 @@ def main(args):
                     summary_writer.add_summary(summary_str, step_out)
                 print("Loss and accuracy: ", loss_value, accuracy)
                 dataset.reset()
+
+                #save model after every epoch 
+                print('saving model now :)')
+                ckpt_path = os.path.join(
+                    cfg.logdir + '/cnn_baseline/{}'.format(dataset_name), 'model-{:.4f}.ckpt'.format(loss_value))
+                train_saver.save(sess, ckpt_path, global_step=step)
+
+                #eval on validation loss 
+
+                # if best_loss is None or loss_value < best_loss:
+                #     bestmodel_saver.save(sess, bestmodel_ckpt_path,global_step=step)
 
 if __name__ == "__main__":
     tf.app.run()
