@@ -15,9 +15,10 @@ def main(_):
   ###########################################################
 
   tf.logging.set_verbosity(tf.logging.INFO)
+  num_classes = 91
 
-  train_dataset = load_mscoco('train', cfg, return_dataset=True)
-  val_dataset = load_mscoco('val', cfg, return_dataset=True)
+  train_dataset = load_mscoco('train', cfg, return_dataset=True, num=1000)
+  val_dataset = load_mscoco('val', cfg, return_dataset=True, num=1000)
 
   num_examples = train_dataset.X.shape[0]
   num_steps_per_epoch = int(num_examples / cfg.batch_size)
@@ -30,8 +31,8 @@ def main(_):
     one_hot_labels = one_hot_encode(labels)
 
     # create batches
-    data_queues = tf.train.slice_input_producer([images, one_hot_labels])
-    images, one_hot_labels = tf.train.shuffle_batch(
+    data_queues = tf.train.slice_input_producer([images, labels, one_hot_labels])
+    images, batch_labels, one_hot_batch_labels = tf.train.shuffle_batch(
       data_queues,
       num_threads=16,
       batch_size=cfg.batch_size,
@@ -39,7 +40,7 @@ def main(_):
       min_after_dequeue=cfg.batch_size * 32,
       allow_smaller_final_batch=False)
 
-    poses, activations = nets.capsules_v0(images, num_classes=91, iterations=1, cfg, name='capsulesEM-V0')
+    poses, activations = nets.capsules_v0(images, num_classes=num_classes, iterations=1, cfg=cfg, name='capsulesEM-V0')
 
     # margin schedule
     # margin increase from 0.2 to 0.9 after margin_schedule_epoch_achieve_max
@@ -54,8 +55,8 @@ def main(_):
       ]
     )
 
-    loss = nets.spread_loss(one_hot_labels, activations, margin=margin, name='spread_loss')
-    train_acc = test_accuracy(activations, labels)
+    loss = nets.spread_loss(one_hot_batch_labels, activations, margin=margin, name='spread_loss')
+    train_acc = test_accuracy(activations, batch_labels)
 
     tf.summary.scalar('losses/spread_loss', loss)
     tf.summary.scalar('accuracies/train_accuracy', train_acc)
@@ -80,10 +81,8 @@ def main(_):
 
     print("\nTraining...\n")
 
-    if tf.train.get_global_step() % 100 == 0:
-      val_images = val_dataset.X
-      val_labels = one_hot_encode(val_dataset.y)
-      val_poses, val_activations = nets.capsules_v0(val_images, val_labels)
+    val_images, val_labels = val_dataset.X.astype(np.float32), val_dataset.y
+    val_poses, val_activations = nets.capsules_v0(val_images, num_classes=num_classes, iterations=1, cfg=cfg, name='capsulesEM-V0-val')
 
     # callback function for slim.learning.train to evaluate val set 
     def modified_train_step(session, *args, **kwargs):
@@ -98,11 +97,11 @@ def main(_):
       return [total_loss, should_stop]
 
     modified_train_step.step = 0
-    train_step_fn.accuracy_validation = test_accuracy(val_activations, val_labels)
+    modified_train_step.accuracy_validation = test_accuracy(val_activations, val_labels)
 
     slim.learning.train(
       train_tensor,
-      logdir=cfg.logdir,
+      logdir=cfg.logdir + '/capsnet/',
       log_every_n_steps=10,
       save_summaries_secs=60,
       saver=tf.train.Saver(max_to_keep=100),
