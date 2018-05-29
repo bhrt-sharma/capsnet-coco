@@ -8,14 +8,6 @@ from keras.datasets import cifar10, cifar100
 from keras import backend as K
 from .dataset import Dataset
 
-
-def one_hot_encode(labels):
-    num_labels = len(labels)
-    one_hot_labels = np.zeros((num_labels, 91))
-    one_hot_labels[np.arange(num_labels), labels] = 1 # one hot encode that shit 
-    return one_hot_labels
-
-
 def load_mscoco(dataset_type, config, num=None, return_dataset=False):
     if dataset_type == 'train':
         data = Dataset("data/train/images/final", is_train=True, batch_size=config.batch_size, num=num)
