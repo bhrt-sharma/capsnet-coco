@@ -26,6 +26,16 @@ def main(_):
     one_hot_labels[np.arange(num_labels), labels] = 1 # one hot encode that shit 
     labels = one_hot_labels
 
+    # create batches
+    data_queues = tf.train.slice_input_producer([images, labels])
+    images, labels = tf.train.shuffle_batch(
+	data_queues,
+	num_threads=16,
+	batch_size=cfg.batch_size,
+	capacity=cfg.batch_size * 64,
+	min_after_dequeue=cfg.batch_size * 32,
+	allow_smaller_final_batch=False)
+
     poses, activations = nets.capsules_v0(images, num_classes=91, iterations=1, name='capsulesEM-V0')
 
     # margin schedule
