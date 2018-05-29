@@ -23,7 +23,7 @@ def main(_):
     images, labels = train_dataset.X.astype(np.float32), train_dataset.y
     labels = np.zeros((len(labels), 91 + 1))[np.arange(len(labels)), labels] = 1 # one hot encode that shit 
 
-    poses, activations = nets.capsules_v0(images, num_classes=91, iterations=1, name='capsulesEM-V0')
+    poses, activations = nets.capsules_v0(images, num_classes=91, iterations=1, cfg, name='capsulesEM-V0')
 
     # margin schedule
     # margin increase from 0.2 to 0.9 after margin_schedule_epoch_achieve_max
