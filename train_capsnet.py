@@ -1,7 +1,7 @@
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
 from config import cfg
-from utils import load_mscoco, test_accuracy
+from utils import load_mscoco, test_accuracy, one_hot_encode
 import numpy as np
 import os
 from tqdm import tqdm
@@ -9,10 +9,15 @@ from models.capsules import nets
 
 
 def main(_):
+
+  ###########################################################
+  # BUILD THE GRAPH
+  ###########################################################
+
   tf.logging.set_verbosity(tf.logging.INFO)
 
   train_dataset = load_mscoco('train', cfg, return_dataset=True)
-  # val_dataset = load_mscoco('val', cfg, return_dataset=True)
+  val_dataset = load_mscoco('val', cfg, return_dataset=True)
 
   num_examples = train_dataset.X.shape[0]
   num_steps_per_epoch = int(num_examples / cfg.batch_size)
@@ -22,10 +27,7 @@ def main(_):
       global_step = tf.train.get_or_create_global_step()
 
     images, labels = train_dataset.X.astype(np.float32), train_dataset.y
-    num_labels = len(labels)
-    one_hot_labels = np.zeros((num_labels, 91))
-    one_hot_labels[np.arange(num_labels), labels] = 1 # one hot encode that shit 
-    labels = one_hot_labels
+    one_hot_labels = one_hot_encode(labels)
 
     # create batches
     data_queues = tf.train.slice_input_producer([images, one_hot_labels])
@@ -52,12 +54,11 @@ def main(_):
       ]
     )
 
-    loss = nets.spread_loss(
-      labels, activations, margin=margin, name='spread_loss'
-    )
+    loss = nets.spread_loss(one_hot_labels, activations, margin=margin, name='spread_loss')
+    train_acc = test_accuracy(activations, labels)
 
     tf.summary.scalar('losses/spread_loss', loss)
-
+    tf.summary.scalar('accuracies/train_accuracy', train_acc)
 
     # exponential learning rate decay
     learning_rate = tf.train.exponential_decay(
@@ -73,7 +74,32 @@ def main(_):
       loss, optimizer, global_step=global_step, clip_gradient_norm=4.0
     )
 
+    ###########################################################
+    # RUN THE GRAPH
+    ###########################################################
+
     print("\nTraining...\n")
+
+    if tf.train.get_global_step() % 100 == 0:
+      val_images = val_dataset.X
+      val_labels = one_hot_encode(val_dataset.y)
+      val_poses, val_activations = nets.capsules_v0(val_images, val_labels)
+
+    # callback function for slim.learning.train to evaluate val set 
+    def modified_train_step(session, *args, **kwargs):
+      # what it would normally do 
+      total_loss, should_stop = slim.learning.train_step(session, *args, **kwargs) 
+
+      if tf.train.get_global_step() % 100 == 0:
+        val_accuracy = session.run(train_step_fn.accuracy_validation)
+        print('Step %s - Loss: %.2f Accuracy: %.2f%%' % (str(train_step_fn.step).rjust(6, '0'), total_loss, accuracy * 100))
+
+      train_step_fn.step += 1
+      return [total_loss, should_stop]
+
+    modified_train_step.step = 0
+    train_step_fn.accuracy_validation = test_accuracy(val_activations, val_labels)
+
     slim.learning.train(
       train_tensor,
       logdir=cfg.logdir,
