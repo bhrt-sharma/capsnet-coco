@@ -21,6 +21,8 @@ def main(_):
       global_step = tf.train.get_or_create_global_step()
 
     images, labels = train_dataset.X.astype(np.float32), train_dataset.y
+    labels = np.zeros((len(labels), 91 + 1))[np.arange(len(labels)), labels] = 1 # one hot encode that shit 
+
     poses, activations = nets.capsules_v0(images, num_classes=91, iterations=1, name='capsulesEM-V0')
 
     # margin schedule
