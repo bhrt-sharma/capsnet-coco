@@ -22,7 +22,9 @@ def main(_):
 
     images, labels = train_dataset.X.astype(np.float32), train_dataset.y
     num_labels = len(labels)
-    labels = np.zeros((num_labels, 91 + 1))[np.arange(num_labels), labels] = 1 # one hot encode that shit 
+    one_hot_labels = np.zeros((num_labels, 91))
+    one_hot_labels[np.arange(num_labels), labels] = 1 # one hot encode that shit 
+    labels = one_hot_labels
 
     poses, activations = nets.capsules_v0(images, num_classes=91, iterations=1, name='capsulesEM-V0')
 
