@@ -21,7 +21,20 @@ def main(_):
       global_step = tf.train.get_or_create_global_step()
 
     images, labels = train_dataset.X.astype(np.float32), train_dataset.y
-    labels = np.zeros((len(labels), 91 + 1))[np.arange(len(labels)), labels] = 1 # one hot encode that shit 
+    num_labels = len(labels)
+    one_hot_labels = np.zeros((num_labels, 91))
+    one_hot_labels[np.arange(num_labels), labels] = 1 # one hot encode that shit 
+    labels = one_hot_labels
+
+    # create batches
+    data_queues = tf.train.slice_input_producer([images, labels])
+    images, labels = tf.train.shuffle_batch(
+	data_queues,
+	num_threads=16,
+	batch_size=cfg.batch_size,
+	capacity=cfg.batch_size * 64,
+	min_after_dequeue=cfg.batch_size * 32,
+	allow_smaller_final_batch=False)
 
     poses, activations = nets.capsules_v0(images, num_classes=91, iterations=1, cfg, name='capsulesEM-V0')
 
