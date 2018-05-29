@@ -12,8 +12,9 @@ def main(_):
   tf.logging.set_verbosity(tf.logging.INFO)
 
   train_dataset = load_mscoco('train', cfg, return_dataset=True)
-  num_examples = train_dataset.X.shape[0]
+  # val_dataset = load_mscoco('val', cfg, return_dataset=True)
 
+  num_examples = train_dataset.X.shape[0]
   num_steps_per_epoch = int(num_examples / cfg.batch_size)
 
   with tf.Graph().as_default():
@@ -27,14 +28,14 @@ def main(_):
     labels = one_hot_labels
 
     # create batches
-    data_queues = tf.train.slice_input_producer([images, labels])
-    images, labels = tf.train.shuffle_batch(
-	data_queues,
-	num_threads=16,
-	batch_size=cfg.batch_size,
-	capacity=cfg.batch_size * 64,
-	min_after_dequeue=cfg.batch_size * 32,
-	allow_smaller_final_batch=False)
+    data_queues = tf.train.slice_input_producer([images, one_hot_labels])
+    images, one_hot_labels = tf.train.shuffle_batch(
+      data_queues,
+      num_threads=16,
+      batch_size=cfg.batch_size,
+      capacity=cfg.batch_size * 64,
+      min_after_dequeue=cfg.batch_size * 32,
+      allow_smaller_final_batch=False)
 
     poses, activations = nets.capsules_v0(images, num_classes=91, iterations=1, cfg, name='capsulesEM-V0')
 
@@ -57,8 +58,16 @@ def main(_):
 
     tf.summary.scalar('losses/spread_loss', loss)
 
-    # TODO: set up a learning_rate decay
-    optimizer = tf.train.AdamOptimizer(learning_rate=0.001)
+
+    # exponential learning rate decay
+    learning_rate = tf.train.exponential_decay(
+      cfg.initial_learning_rate,
+      global_step,
+      decay_steps = num_steps_per_epoch,
+      decay_rate = 0.8,
+      staircase = True)
+
+    optimizer = tf.train.AdamOptimizer(learning_rate)
 
     train_tensor = slim.learning.create_train_op(
       loss, optimizer, global_step=global_step, clip_gradient_norm=4.0
