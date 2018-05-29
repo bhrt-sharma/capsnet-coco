@@ -56,7 +56,6 @@ def spread_loss(labels, activations, margin, name):
   """
 
   activations_shape = activations.get_shape().as_list()
-  print(activations_shape)
 
   with tf.variable_scope(name) as scope:
 

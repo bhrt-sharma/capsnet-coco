@@ -64,6 +64,7 @@ def main(_):
       loss, optimizer, global_step=global_step, clip_gradient_norm=4.0
     )
 
+    print("\nTraining...\n")
     slim.learning.train(
       train_tensor,
       logdir=cfg.logdir,
