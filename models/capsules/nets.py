@@ -2,8 +2,7 @@
 """
 
 import tensorflow as tf
-
-from core import _conv2d_wrapper, capsules_init, capsules_conv, capsules_fc
+from .core import _conv2d_wrapper, capsules_init, capsules_conv, capsules_fc
 
 slim = tf.contrib.slim
 
@@ -11,7 +10,7 @@ slim = tf.contrib.slim
 # -------------------------------- capsules net --------------------------------#
 # ------------------------------------------------------------------------------#
 
-def capsules_v0(inputs, num_classes, iterations, name='CapsuleEM-V0'):
+def capsules_v0(inputs, num_classes, iterations, cfg, name='CapsuleEM-V0'):
   """Replicate the network in `Matrix Capsules with EM Routing.`
   """
 
@@ -19,19 +18,19 @@ def capsules_v0(inputs, num_classes, iterations, name='CapsuleEM-V0'):
 
     # inputs [N, H, W, C] -> conv2d, 5x5, strides 2, channels 32 -> nets [N, OH, OW, 32]
     nets = _conv2d_wrapper(
-      inputs, shape=[5, 5, 1, 32], strides=[1, 2, 2, 1], padding='SAME', add_bias=True, activation_fn=tf.nn.relu, name='conv1'
+      inputs, shape=[1, 1, 3, cfg.A], strides=[1, 2, 2, 1], padding='SAME', add_bias=True, activation_fn=tf.nn.relu, name='conv1'
     )
     # inputs [N, H, W, C] -> conv2d, 1x1, strides 1, channels 32x(4x4+1) -> (poses, activations)
     nets = capsules_init(
-      nets, shape=[1, 1, 32, 32], strides=[1, 1, 1, 1], padding='VALID', pose_shape=[4, 4], name='capsule_init'
+      nets, shape=[1, 1, cfg.A, cfg.B], strides=[1, 1, 1, 1], padding='VALID', pose_shape=[4, 4], name='capsule_init'
     )
     # inputs: (poses, activations) -> capsule-conv 3x3x32x32x4x4, strides 2 -> (poses, activations)
     nets = capsules_conv(
-      nets, shape=[3, 3, 32, 32], strides=[1, 2, 2, 1], iterations=iterations, name='capsule_conv1'
+      nets, shape=[3, 3, cfg.B, cfg.C], strides=[1, 2, 2, 1], iterations=iterations, name='capsule_conv1'
     )
     # inputs: (poses, activations) -> capsule-conv 3x3x32x32x4x4, strides 1 -> (poses, activations)
     nets = capsules_conv(
-      nets, shape=[3, 3, 32, 32], strides=[1, 1, 1, 1], iterations=iterations, name='capsule_conv2'
+      nets, shape=[3, 3, cfg.C, cfg.D], strides=[1, 1, 1, 1], iterations=iterations, name='capsule_conv2'
     )
     # inputs: (poses, activations) -> capsule-fc 1x1x32x10x4x4 shared view transform matrix within each channel -> (poses, activations)
     nets = capsules_fc(
@@ -57,6 +56,7 @@ def spread_loss(labels, activations, margin, name):
   """
 
   activations_shape = activations.get_shape().as_list()
+  print(activations_shape)
 
   with tf.variable_scope(name) as scope:
 

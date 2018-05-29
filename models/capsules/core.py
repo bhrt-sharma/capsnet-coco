@@ -515,7 +515,7 @@ def capsules_fc(inputs, num_classes, iterations, name):
       0.0, shape=[1, H, 1, 1, 1], dtype=tf.float32
     )
     coordinate_offset_h = tf.stack(
-      [coordinate_offset_hh, coordinate_offset_h0] + [coordinate_offset_h0 for _ in xrange(14)], axis=-1
+      [coordinate_offset_hh, coordinate_offset_h0] + [coordinate_offset_h0 for _ in range(14)], axis=-1
     )
 
     coordinate_offset_ww = tf.reshape(
@@ -525,7 +525,7 @@ def capsules_fc(inputs, num_classes, iterations, name):
       0.0, shape=[1, 1, W, 1, 1], dtype=tf.float32
     )
     coordinate_offset_w = tf.stack(
-      [coordinate_offset_w0, coordinate_offset_ww] + [coordinate_offset_w0 for _ in xrange(14)], axis=-1
+      [coordinate_offset_w0, coordinate_offset_ww] + [coordinate_offset_w0 for _ in range(14)], axis=-1
     )
 
     votes = votes + coordinate_offset_h + coordinate_offset_w
@@ -804,7 +804,7 @@ def matrix_capsules_em_routing(votes, i_activations, beta_v, beta_a, iterations,
     # y=tf.sigmoid(x): y=0.50,0.73,0.88,0.95,0.98,0.99995458 for x=0,1,2,3,4,10,
     it_min = 1.0
     it_max = min(iterations, 3.0)
-    for it in xrange(iterations):
+    for it in range(iterations):
       inverse_temperature = it_min + (it_max - it_min) * it / max(1.0, iterations - 1.0)
       o_mean, o_stdv, o_activations = m_step(
         rr, votes, i_activations, beta_v, beta_a, inverse_temperature=inverse_temperature
