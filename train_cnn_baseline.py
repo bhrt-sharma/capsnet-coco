@@ -20,7 +20,7 @@ def main(args):
     val_dataset = load_mscoco('val', cfg, num=500, return_dataset=True)
     dataset_name = 'mscoco' 
     checkpoints_to_keep = 1
-    N, D = dataset.X.shape[0], dataset.X.shape[1]
+    N, D = train_dataset.X.shape[0], train_dataset.X.shape[1]
     num_classes = 91
     print("\nNum classes", num_classes)
     num_batches_per_epoch = int(N / cfg.batch_size)
