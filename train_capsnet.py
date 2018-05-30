@@ -1,7 +1,7 @@
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
 from config import cfg
-,from utils import load_mscoco, test_accuracy, one_hot_encode
+from utils import load_mscoco, test_accuracy, one_hot_encode
 import numpy as np
 import os
 from tqdm import tqdm
