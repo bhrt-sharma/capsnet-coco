@@ -125,10 +125,12 @@ def main(args):
                     bestmodel_saver.save(sess, bestmodel_ckpt_path, global_step=step_out)
                     best_acc = avg_val_acc
                 val_dataset.reset()
+
 def write_summary(value, tag, summary_writer, global_step):
     """Write a single summary value to tensorboard"""
     summary = tf.Summary()
     summary.value.add(tag=tag, simple_value=value)
     summary_writer.add_summary(summary, global_step)
+
 if __name__ == "__main__":
     tf.app.run()
