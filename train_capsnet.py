@@ -69,7 +69,7 @@ def main(_):
       decay_rate = 0.8,
       staircase = True)
 
-    optimizer = tf.train.AdamOptimizer(learning_rate=cfg.initial_learning_rate)
+    optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
 
     train_tensor = slim.learning.create_train_op(
       loss, optimizer, global_step=global_step, clip_gradient_norm=4.0
