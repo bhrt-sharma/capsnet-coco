@@ -57,7 +57,6 @@ def main(_):
 
     tf.summary.scalar('losses/spread_loss', loss)
     
-
     # exponential learning rate decay
     learning_rate = tf.train.exponential_decay(
       cfg.initial_learning_rate,
@@ -74,40 +73,28 @@ def main(_):
 
     print("\nTraining...\n")
 
-    # get train accuracy
-    def get_train_accuracy(): 
-      mean_train_acc = 0.0
-      num_batches_in_train = 0
-      while train_dataset.has_next_batch():
-        num_batches_in_train += 1
-        curr_X, curr_labels = train_dataset.next_batch()
-        curr_X = curr_X.astype(np.float32)
-        train_poses, train_activations = nets.capsules_v0(
-            curr_X, 
-            num_classes=num_classes, 
-            iterations=cfg.iter_routing, 
-            cfg=cfg, 
-            name='capsulesEM-trainAcc'
-          )
-        train_acc = test_accuracy(train_activations, curr_labels)
-        mean_train_acc += train_acc
-      mean_train_acc = mean_train_acc / num_batches_in_train
-      tf.summary.scalar('accuracies/train_acc', mean_train_acc)
-      return mean_train_acc
-
     def train_step_fn(session, *args, **kwargs):
       total_loss, should_stop = slim.learning.train_step(session, *args, **kwargs)
 
       if train_step_fn.step % 100 == 0:
-        accuracy = session.run(train_step_fn.train_accuracy)
+        num_batches_in_train = 0
+        mean_train_acc = 0.0
+        while train_dataset.has_next_batch():
+          num_batches_in_train += 1
+          curr_X, curr_labels = train_dataset.next_batch()
+          curr_X = curr_X.astype(np.float32)
+          train_scores = session.run(activations, feed_dict={images: curr_X})
+          train_acc = test_accuracy(train_scores, curr_labels)
+          mean_train_acc += train_acc
+        mean_train_acc = mean_train_acc / num_batches_in_train
+        tf.summary.scalar('accuracies/train_acc', mean_train_acc)
+
         print('Step %s - Loss: %.2f Accuracy: %.2f%%' % (str(train_step_fn.step).rjust(6, '0'), total_loss, accuracy * 100))
 
-      print(train_step_fn.step)
       train_step_fn.step += 1
       return [total_loss, should_stop]
 
     train_step_fn.step = 0
-    train_step_fn.train_accuracy = get_train_accuracy()
 
     slim.learning.train(
       train_tensor,
