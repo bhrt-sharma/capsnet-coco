@@ -13,7 +13,7 @@ def main(_):
 
   num_classes = 91
 
-  train_dataset = load_mscoco('train', cfg, return_dataset=True, num=1000)
+  train_dataset = load_mscoco('train', cfg, return_dataset=True)
   # val_dataset = load_mscoco('val', cfg, return_dataset=True, num=1000)
 
   num_examples = train_dataset.X.shape[0]
@@ -27,8 +27,8 @@ def main(_):
     one_hot_labels = one_hot_encode(labels, num_classes)
 
     # create batches
-    data_queues = tf.train.slice_input_producer([images, one_hot_labels])
-    images, one_hot_labels = tf.train.shuffle_batch(
+    data_queues = tf.train.slice_input_producer([images, one_hot_labels, labels])
+    images, one_hot_labels, labels = tf.train.shuffle_batch(
       data_queues,
       num_threads=16,
       batch_size=cfg.batch_size,
@@ -37,6 +37,8 @@ def main(_):
       allow_smaller_final_batch=False)
 
     poses, activations = nets.capsules_v0(images, num_classes=num_classes, iterations=cfg.iter_routing, cfg=cfg, name='capsulesEM-V0')
+
+    train_accuracy = test_accuracy(activations, labels)
 
     # margin schedule
     # margin increase from 0.2 to 0.9 after margin_schedule_epoch_achieve_max
@@ -83,13 +85,16 @@ def main(_):
           num_batches_in_train += 1
           curr_X, curr_labels = train_dataset.next_batch()
           curr_X = curr_X.astype(np.float32)
-          train_scores = session.run(activations, feed_dict={images: curr_X})
-          train_acc = test_accuracy(train_scores, curr_labels)
-          mean_train_acc += train_acc
+          curr_train_acc, step_out = session.run([train_accuracy, global_step], feed_dict={images: curr_X, labels: curr_labels})
+          mean_train_acc += curr_train_acc
         mean_train_acc = mean_train_acc / num_batches_in_train
-        tf.summary.scalar('accuracies/train_acc', mean_train_acc)
+        
+        sum_writer = tf.summary.FileWriter(cfg.logdir, graph=session.graph)
+        summary = tf.Summary()
+        summary.value.add(tag='accuracies/train_acc', simple_value=mean_train_acc)
+        sum_writer.add_summary(summary, step_out)
 
-        print('Step %s - Loss: %.2f Accuracy: %.2f%%' % (str(train_step_fn.step).rjust(6, '0'), total_loss, accuracy * 100))
+        print('Step %s - Accuracy: %.2f%%' % (str(train_step_fn.step).rjust(6, '0'), mean_train_acc))
 
       train_step_fn.step += 1
       return [total_loss, should_stop]
