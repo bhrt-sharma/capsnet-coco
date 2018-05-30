@@ -61,7 +61,7 @@ def main(args):
                 learning_rate_decay_fn = _learning_rate_decay_fn)
 
     # set best checkpoint
-    bestmodel_dir = os.path.join(cfg.logdir + 'cnn_baseline/{}'.format(experiment_name), 'best_checkpoint')
+    bestmodel_dir = os.path.join(cfg.logdir + '/cnn_baseline/{}'.format(experiment_name), 'best_checkpoint')
     if not os.path.exists(bestmodel_dir):
         os.makedirs(bestmodel_dir)
     bestmodel_ckpt_path = os.path.join(bestmodel_dir, "cnn_best.ckpt")
