@@ -81,6 +81,7 @@ def main(_):
       total_loss, should_stop = slim.learning.train_step(session, *args, **kwargs)
 
       def get_accuracy_for_dataset(dset):
+        print("Getting accuracy... ")
         num_batches_in_train = 0
         mean_acc = 0.0
         while dset.has_next_batch():
@@ -99,12 +100,12 @@ def main(_):
         summary.value.add(tag=tag, simple_value=value)
         sum_writer.add_summary(summary, step_out)
 
-      if (train_step_fn.step != 0) and (train_step_fn.step % num_steps_per_epoch == 0):
+      if (train_step_fn.step % 100 == 0):
         mean_train_acc = get_accuracy_for_dataset(train_dataset)
         mean_val_acc = get_accuracy_for_dataset(val_dataset)
         write_summary('accuracies/train_acc', mean_train_acc, step_out)
-        write_summary('accuracies/val_Acc', mean_val_acc, step_out)
-        print('Step %s - Accuracy: %.2f%%' % (str(train_step_fn.step).rjust(6, '0'), mean_train_acc))
+        write_summary('accuracies/val_acc', mean_val_acc, step_out)
+        print('Step %s - Train Accuracy: %.2f%% - Val Accuracy: %.2f%%' % (str(train_step_fn.step).rjust(6, '0'), mean_train_acc, mean_val_acc))
 
       train_step_fn.step += 1
       return [total_loss, should_stop]
@@ -115,7 +116,7 @@ def main(_):
       train_tensor,
       logdir=cfg.logdir,
       log_every_n_steps=10,
-      save_summaries_secs=60,
+      save_summaries_secs=60 * 5,
       saver=tf.train.Saver(max_to_keep=100),
       save_interval_secs=600,
       # yg: add session_config to limit gpu usage and allow growth
