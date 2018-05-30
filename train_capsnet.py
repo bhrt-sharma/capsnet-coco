@@ -55,26 +55,8 @@ def main(_):
       one_hot_labels, activations, margin=margin, name='spread_loss'
     )
 
-    # get train accuracy 
-    mean_train_acc = 0.0
-    num_batches_in_train = 0
-    while train_dataset.has_next_batch():
-      num_batches_in_train += 1
-      curr_X, curr_labels = train_dataset.next_batch()
-      curr_X = curr_X.astype(np.float32)
-      train_poses, train_activations = nets.capsules_v0(
-          curr_X, 
-          num_classes=num_classes, 
-          iterations=cfg.iter_routing, 
-          cfg=cfg, 
-          name='capsulesEM-trainAcc'
-        )
-      train_acc = test_accuracy(train_activations, curr_labels)
-      mean_train_acc += train_acc
-    mean_train_acc = mean_train_acc / num_batches_in_train
-
     tf.summary.scalar('losses/spread_loss', loss)
-    tf.summary.scalar('accuracies/train_acc', mean_train_acc)
+    
 
     # exponential learning rate decay
     learning_rate = tf.train.exponential_decay(
@@ -91,6 +73,41 @@ def main(_):
     )
 
     print("\nTraining...\n")
+
+    # get train accuracy
+    def get_train_accuracy(): 
+      mean_train_acc = 0.0
+      num_batches_in_train = 0
+      while train_dataset.has_next_batch():
+        num_batches_in_train += 1
+        curr_X, curr_labels = train_dataset.next_batch()
+        curr_X = curr_X.astype(np.float32)
+        train_poses, train_activations = nets.capsules_v0(
+            curr_X, 
+            num_classes=num_classes, 
+            iterations=cfg.iter_routing, 
+            cfg=cfg, 
+            name='capsulesEM-trainAcc'
+          )
+        train_acc = test_accuracy(train_activations, curr_labels)
+        mean_train_acc += train_acc
+      mean_train_acc = mean_train_acc / num_batches_in_train
+      tf.summary.scalar('accuracies/train_acc', mean_train_acc)
+
+    def train_step_fn(session, *args, **kwargs):
+      total_loss, should_stop = train_step(session, *args, **kwargs)
+
+      if train_step_fn.step % 100 == 0:
+        accuracy = session.run(train_step_fn.train_accuracy)
+        print('Step %s - Loss: %.2f Accuracy: %.2f%%' % (str(train_step_fn.step).rjust(6, '0'), total_loss, accuracy * 100))
+
+      train_step_fn.step += 1
+      return [total_loss, should_stop]
+
+    train_step_fn.step = 0
+    train_step_fn.train_accuracy = get_train_accuracy
+
+
     slim.learning.train(
       train_tensor,
       logdir=cfg.logdir,
@@ -109,10 +126,10 @@ def main(_):
           'visible_device_list': '0'
         },
         allow_soft_placement=True,
-        log_device_placement=False
+        log_device_placement=False,
+        train_step_fn = train_step_fn
       )
     )
 
 if __name__ == "__main__":
   tf.app.run()
-
