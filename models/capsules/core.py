@@ -20,7 +20,7 @@ epsilon = 1e-9
 def _matmul_broadcast(x, y, name):
   """Compute x @ y, broadcasting over the first `N - 2` ranks.
   """
-  with tf.variable_scope(name) as scope:
+  with tf.variable_scope(name, reuse=tf.AUTO_REUSE) as scope:
     return tf.reduce_sum(
       x[..., tf.newaxis] * y[..., tf.newaxis, :, :], axis=-2
     )
@@ -92,7 +92,7 @@ def _conv2d_wrapper(inputs, shape, strides, padding, add_bias, activation_fn, na
   """Wrapper over tf.nn.conv2d().
   """
 
-  with tf.variable_scope(name) as scope:
+  with tf.variable_scope(name, reuse=tf.AUTO_REUSE) as scope:
     kernel = _get_weights_wrapper(
       name='weights', shape=shape, weights_decay_factor=0.0
     )
@@ -118,7 +118,7 @@ def _separable_conv2d_wrapper(inputs, depthwise_shape, pointwise_shape, strides,
   """Wrapper over tf.nn.separable_conv2d().
   """
 
-  with tf.variable_scope(name) as scope:
+  with tf.variable_scope(name, reuse=tf.AUTO_REUSE) as scope:
     dkernel = _get_weights_wrapper(
       name='depthwise_weights', shape=depthwise_shape, weights_decay_factor=0.0
     )
@@ -148,7 +148,7 @@ def _depthwise_conv2d_wrapper(inputs, shape, strides, padding, add_bias, activat
   """Wrapper over tf.nn.depthwise_conv2d().
   """
 
-  with tf.variable_scope(name) as scope:
+  with tf.variable_scope(name, reuse=tf.AUTO_REUSE) as scope:
     dkernel = _get_weights_wrapper(
       name='depthwise_weights', shape=shape, weights_decay_factor=0.0
     )
@@ -202,7 +202,7 @@ def capsules_init(inputs, shape, strides, padding, pose_shape, name):
 
   # assert len(pose_shape) == 2
 
-  with tf.variable_scope(name) as scope:
+  with tf.variable_scope(name, reuse=tf.AUTO_REUSE) as scope:
 
     # poses: build one by one
     # poses = []
@@ -316,7 +316,7 @@ def capsules_conv(inputs, shape, strides, iterations, name):
 
   # this explicit express a matrix PH x PW should be use as a viewpoint transformation matrix to adjust pose.
 
-  with tf.variable_scope(name) as scope:
+  with tf.variable_scope(name, reuse=tf.AUTO_REUSE) as scope:
 
     # kernel: [KH, KW, I, O, PW, PW]
     # yg note: if pose is irregular such as 5x3, then kernel for pose view transformation should be 3x3.
@@ -468,7 +468,7 @@ def capsules_fc(inputs, num_classes, iterations, name):
 
   inputs_activations_shape = inputs_activations.get_shape().as_list()
 
-  with tf.variable_scope(name) as scope:
+  with tf.variable_scope(name, reuse=tf.AUTO_REUSE) as scope:
 
     # kernel: [I, O, PW, PW]
     # yg note: if pose is irregular such as 5x3, then kernel for pose view transformation should be 3x3.
@@ -623,7 +623,7 @@ def matrix_capsules_em_routing(votes, i_activations, beta_v, beta_a, iterations,
   # i_activations: [N, OH, OW, KH x KW x I]
   i_activations_shape = i_activations.get_shape().as_list()
 
-  with tf.variable_scope(name) as scope:
+  with tf.variable_scope(name, reuse=tf.AUTO_REUSE) as scope:
 
     # note: match rr shape, i_activations shape with votes shape for broadcasting in EM routing
 
