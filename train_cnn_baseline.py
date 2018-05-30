@@ -96,12 +96,12 @@ def main(args):
                     summary_writer.add_summary(summary_str, step_out)
                 print("Loss and accuracy: ", loss_value, accuracy)
                 dataset.reset()
-
+                
                 #save model after every epoch 
                 print('saving model now :)')
                 train_ckpt_path = os.path.join(
                     cfg.logdir + '/cnn_baseline/{}'.format(experiment_name), 'model-{:.4f}.ckpt'.format(loss_value))
-                train_saver.save(sess, train_ckpt_path, global_step=step)
+                train_saver.save(sess, train_ckpt_path, global_step=step_out)
 
                 #eval on validation loss 
                 loss_per_val_batch = 0.0
@@ -120,7 +120,7 @@ def main(args):
                 write_summary(avg_val_acc, "dev/avg_validation_acc", summary_writer, global_step)
 
                 if best_acc is None or avg_val_acc > best_acc:
-                    bestmodel_saver.save(sess, bestmodel_ckpt_path, global_step=step)
+                    bestmodel_saver.save(sess, bestmodel_ckpt_path, global_step=step_out)
                     best_acc = avg_val_acc
 
 def write_summary(value, tag, summary_writer, global_step):
