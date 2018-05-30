@@ -16,7 +16,7 @@ def main(args):
     assert len(args) == 2 and isinstance(args[1], str)
     experiment_name = args[1]
     """ GET DATA """
-    dataset = load_mscoco(cfg.phase, cfg, num=500, return_dataset=True)
+    train_dataset = load_mscoco(cfg.phase, cfg, num=500, return_dataset=True)
     val_dataset = load_mscoco('val', cfg, num=500, return_dataset=True)
     dataset_name = 'mscoco' 
     checkpoints_to_keep = 1
@@ -91,12 +91,12 @@ def main(args):
             best_acc = None 
             for e in list(range(cfg.num_epochs)):
                 for b in list(range(num_batches_per_epoch)):
-                    batch = dataset.next_batch()
+                    batch = train_dataset.next_batch()
                     feed_dict = {batch_x: batch[0].astype(np.float32), batch_labels: batch[1]}
                     _, loss_value, accuracy, summary_str, step_out = sess.run([opt_op, loss, acc, summary_op, global_step], feed_dict=feed_dict)
                     summary_writer.add_summary(summary_str, step_out)
                 print("Loss and accuracy: ", loss_value, accuracy)
-                dataset.reset()
+                train_dataset.reset()
 
                 #save model after every epoch 
                 print('saving model now :)')
@@ -108,8 +108,8 @@ def main(args):
                 loss_per_val_batch = 0.0
                 acc_per_val_batch = 0.0
                 num_val_batches = 0
-                while dataset.has_next_batch():
-                    val_batch = dataset.next_batch()
+                while val_dataset.has_next_batch():
+                    val_batch = val_dataset.next_batch()
                     feed_dict = {batch_x: val_batch[0].astype(np.float32), batch_labels: val_batch[1]}
                     dev_loss, dev_acc, summary_str, step_out = sess.run([loss, acc, summary_op, global_step], feed_dict=feed_dict)
                     loss_per_val_batch += loss_value
@@ -123,7 +123,7 @@ def main(args):
                 if best_acc is None or avg_val_acc > best_acc:
                     bestmodel_saver.save(sess, bestmodel_ckpt_path, global_step=step_out)
                     best_acc = avg_val_acc
-
+                val_dataset.reset()
 def write_summary(value, tag, summary_writer, global_step):
     """Write a single summary value to tensorboard"""
     summary = tf.Summary()
