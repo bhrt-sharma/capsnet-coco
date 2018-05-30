@@ -77,10 +77,10 @@ def main(args):
             tf.get_default_graph().finalize()
 
             """Set summary writers"""
-            if not os.path.exists(cfg.logdir + '/cnn_baseline/{}_images/train_log/'.format(cfg.phase)):
-                os.makedirs(cfg.logdir + '/cnn_baseline/{}_images/train_log/'.format(cfg.phase))
+            if not os.path.exists(cfg.logdir + '/cnn_baseline/{}/train_log/'.format(experiment_name)):
+                os.makedirs(cfg.logdir + '/cnn_baseline/{}/train_log/'.format(experiment_name))
             summary_writer = tf.summary.FileWriter(
-                cfg.logdir + '/cnn_baseline/{}_images/train_log/'.format(cfg.phase), graph=sess.graph)
+                cfg.logdir + '/cnn_baseline/{}/train_log/'.format(experiment_name), graph=sess.graph)
 
             # if not os.path.exists(cfg.logdir + '/cnn_baseline/{}_images/val_log/'.format(cfg.phase)):
             #     os.makedirs(cfg.logdir + '/cnn_baseline/{}_images/val_log/'.format(cfg.phase))
