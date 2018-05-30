@@ -18,7 +18,7 @@ def main(args):
     """ GET DATA """
     dataset = load_mscoco(cfg.phase, cfg, num=100, return_dataset=True)
     val_dataset = load_mscoco('val', cfg, num=100, return_dataset=True)
-    dataset_name = 'mscoco'
+    dataset_name = 'mscoco' 
     checkpoints_to_keep = 1
     N, D = dataset.X.shape[0], dataset.X.shape[1]
     num_classes = 91
@@ -96,7 +96,7 @@ def main(args):
                     summary_writer.add_summary(summary_str, step_out)
                 print("Loss and accuracy: ", loss_value, accuracy)
                 dataset.reset()
-                
+
                 #save model after every epoch 
                 print('saving model now :)')
                 train_ckpt_path = os.path.join(
@@ -116,8 +116,8 @@ def main(args):
                     num_val_batches +=1 
                 avg_val_loss = loss_per_val_batch / num_val_batches
                 avg_val_acc = acc_per_val_batch / num_val_batches
-                write_summary(avg_val_loss, "dev/avg_validation_loss", summary_writer, global_step)
-                write_summary(avg_val_acc, "dev/avg_validation_acc", summary_writer, global_step)
+                write_summary(avg_val_loss, "dev/avg_validation_loss", summary_writer, step_out)
+                write_summary(avg_val_acc, "dev/avg_validation_acc", summary_writer, step_out)
 
                 if best_acc is None or avg_val_acc > best_acc:
                     bestmodel_saver.save(sess, bestmodel_ckpt_path, global_step=step_out)
