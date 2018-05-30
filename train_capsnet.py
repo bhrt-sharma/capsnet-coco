@@ -78,14 +78,14 @@ def main(_):
     def train_step_fn(session, *args, **kwargs):
       total_loss, should_stop = slim.learning.train_step(session, *args, **kwargs)
 
-      if train_step_fn.step % 10 == 0:
+      if (train_step_fn.step != 0) and (train_step_fn.step % 10 == 0):
         num_batches_in_train = 0
         mean_train_acc = 0.0
         while train_dataset.has_next_batch():
           num_batches_in_train += 1
           curr_X, curr_labels = train_dataset.next_batch()
           curr_X = curr_X.astype(np.float32)
-          curr_train_acc = session.run([train_accuracy], feed_dict={images: curr_X, labels: curr_labels})
+          curr_train_acc, step_out = session.run([train_accuracy, global_step], feed_dict={images: curr_X, labels: curr_labels})
           mean_train_acc += curr_train_acc
         mean_train_acc = mean_train_acc / num_batches_in_train
         train_dataset.reset()
@@ -93,7 +93,7 @@ def main(_):
         sum_writer = tf.summary.FileWriter(cfg.logdir, graph=session.graph)
         summary = tf.Summary()
         summary.value.add(tag='accuracies/train_acc', simple_value=mean_train_acc)
-        sum_writer.add_summary(summary, tf.train.global_step())
+        sum_writer.add_summary(summary, step_out)
 
         print('Step %s - Accuracy: %.2f%%' % (str(train_step_fn.step).rjust(6, '0'), mean_train_acc))
 
@@ -121,8 +121,8 @@ def main(_):
         },
         allow_soft_placement=True,
         log_device_placement=False,
-      )
-      # train_step_fn=train_step_fn
+      ),
+      train_step_fn=train_step_fn
     )
 
 if __name__ == "__main__":
