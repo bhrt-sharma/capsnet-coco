@@ -24,7 +24,7 @@ def main(_):
       global_step = tf.train.get_or_create_global_step()
 
     images, labels = train_dataset.X.astype(np.float32), train_dataset.y
-    one_hot_labels = one_hot_encode(labels)
+    one_hot_labels = one_hot_encode(labels, num_classes)
 
     # create batches
     data_queues = tf.train.slice_input_producer([images, one_hot_labels])

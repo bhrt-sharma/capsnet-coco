@@ -32,7 +32,7 @@ def test_accuracy(logits, labels):
     return accuracy
 
 
-def one_hot_encode(labels):
+def one_hot_encode(labels, num_classes):
     num_labels = len(labels)
     one_hot_labels = np.zeros((num_labels, num_classes))
     one_hot_labels[np.arange(num_labels), labels] = 1 # one hot encode that shit 
