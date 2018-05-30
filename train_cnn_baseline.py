@@ -88,6 +88,7 @@ def main(args):
             #     cfg.logdir + '/cnn_baseline/{}_images/val_log/'.format(cfg.phase), graph=sess.graph)
             """Main loop"""
             best_loss = None
+            best_acc = None 
             for e in list(range(cfg.num_epochs)):
                 for b in list(range(num_batches_per_epoch)):
                     batch = dataset.next_batch()
