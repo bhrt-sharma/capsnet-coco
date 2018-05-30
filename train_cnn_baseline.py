@@ -121,6 +121,7 @@ def main(args):
                 write_summary(avg_val_acc, "dev/avg_validation_acc", summary_writer, step_out)
 
                 if best_acc is None or avg_val_acc > best_acc:
+                    print('saving best model!')
                     bestmodel_saver.save(sess, bestmodel_ckpt_path, global_step=step_out)
                     best_acc = avg_val_acc
                 val_dataset.reset()
