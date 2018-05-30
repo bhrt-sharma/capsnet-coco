@@ -16,8 +16,8 @@ def main(args):
     assert len(args) == 2 and isinstance(args[1], str)
     experiment_name = args[1]
     """ GET DATA """
-    dataset = load_mscoco(cfg.phase, cfg, num=100, return_dataset=True)
-    val_dataset = load_mscoco('val', cfg, num=100, return_dataset=True)
+    dataset = load_mscoco(cfg.phase, cfg, num=500, return_dataset=True)
+    val_dataset = load_mscoco('val', cfg, num=500, return_dataset=True)
     dataset_name = 'mscoco' 
     checkpoints_to_keep = 1
     N, D = dataset.X.shape[0], dataset.X.shape[1]
