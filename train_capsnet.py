@@ -11,8 +11,10 @@ from models.capsules import nets
 def main(_):
   tf.logging.set_verbosity(tf.logging.INFO)
 
+  num_classes = 91
+
   train_dataset = load_mscoco('train', cfg, return_dataset=True, num=1000)
-  # val_dataset = load_mscoco('val', cfg, return_dataset=True)
+  # val_dataset = load_mscoco('val', cfg, return_dataset=True, num=1000)
 
   num_examples = train_dataset.X.shape[0]
   num_steps_per_epoch = int(num_examples / cfg.batch_size)
@@ -23,7 +25,7 @@ def main(_):
 
     images, labels = train_dataset.X.astype(np.float32), train_dataset.y
     num_labels = len(labels)
-    one_hot_labels = np.zeros((num_labels, 91))
+    one_hot_labels = np.zeros((num_labels, num_classes))
     one_hot_labels[np.arange(num_labels), labels] = 1 # one hot encode that shit 
     labels = one_hot_labels
 
@@ -37,7 +39,7 @@ def main(_):
       min_after_dequeue=cfg.batch_size * 32,
       allow_smaller_final_batch=False)
 
-    poses, activations = nets.capsules_v0(images, num_classes=91, iterations=1, cfg=cfg, name='capsulesEM-V0')
+    poses, activations = nets.capsules_v0(images, num_classes=num_classes, iterations=cfg.iter_routing, cfg=cfg, name='capsulesEM-V0')
 
     # margin schedule
     # margin increase from 0.2 to 0.9 after margin_schedule_epoch_achieve_max
@@ -56,8 +58,27 @@ def main(_):
       one_hot_labels, activations, margin=margin, name='spread_loss'
     )
 
-    tf.summary.scalar('losses/spread_loss', loss)
+    # get train accuracy 
+    mean_train_acc = 0.0
+    num_batches_in_train = 0
+    while train_dataset.has_next_batch():
+      num_batches_in_train += 1
+      curr_batch = train_dataset.next_batch()
+      curr_X = curr_batch.X.astype(np.float32)
+      curr_labels = curr_batch.y
+      train_poses, train_activations = nets.capsules_v0(
+          curr_X, 
+          num_classes=num_classes, 
+          iterations=cfg.iter_routing, 
+          cfg=cfg, 
+          name='capsulesEM-trainAcc'
+        )
+      train_acc = test_accuracy(train_activations, curr_labels)
+      mean_train_acc += train_acc
+    mean_train_acc = mean_train_acc / num_batches_in_train
 
+    tf.summary.scalar('losses/spread_loss', loss)
+    tf.summary.scalar('accuracies/train_acc', mean_train_acc)
 
     # exponential learning rate decay
     learning_rate = tf.train.exponential_decay(

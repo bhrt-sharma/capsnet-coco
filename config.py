@@ -13,7 +13,7 @@ flags.DEFINE_float('initial_learning_rate', 1e-3, '\lambda in the activation fun
 
 flags.DEFINE_integer('batch_size', 50, 'batch size')
 flags.DEFINE_integer('num_epochs', 50, 'number of epochs')
-flags.DEFINE_integer('iter_routing', 2, 'number of iterations')
+flags.DEFINE_integer('iter_routing', 1, 'number of iterations')
 flags.DEFINE_float('m_schedule', 0.2, 'the m will get to 0.9 at current epoch')
 flags.DEFINE_float('epsilon', 1e-9, 'epsilon')
 flags.DEFINE_float('m_plus', 0.9, 'the parameter of m plus')
