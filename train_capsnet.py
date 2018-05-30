@@ -1,7 +1,7 @@
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
 from config import cfg
-from utils import load_mscoco, test_accuracy
+,from utils import load_mscoco, test_accuracy, one_hot_encode
 import numpy as np
 import os
 from tqdm import tqdm
@@ -24,10 +24,7 @@ def main(_):
       global_step = tf.train.get_or_create_global_step()
 
     images, labels = train_dataset.X.astype(np.float32), train_dataset.y
-    num_labels = len(labels)
-    one_hot_labels = np.zeros((num_labels, num_classes))
-    one_hot_labels[np.arange(num_labels), labels] = 1 # one hot encode that shit 
-    labels = one_hot_labels
+    one_hot_labels = one_hot_encode(labels)
 
     # create batches
     data_queues = tf.train.slice_input_producer([images, one_hot_labels])
@@ -63,9 +60,8 @@ def main(_):
     num_batches_in_train = 0
     while train_dataset.has_next_batch():
       num_batches_in_train += 1
-      curr_batch = train_dataset.next_batch()
-      curr_X = curr_batch.X.astype(np.float32)
-      curr_labels = curr_batch.y
+      curr_X, curr_labels = train_dataset.next_batch()
+      curr_X = curr_X.astype(np.float32)
       train_poses, train_activations = nets.capsules_v0(
           curr_X, 
           num_classes=num_classes, 

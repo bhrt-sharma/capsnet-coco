@@ -14,7 +14,7 @@ def load_mscoco(dataset_type, config, num=None, return_dataset=False):
     elif dataset_type == 'test':
         data = Dataset("data/test/images/final", batch_size=config.batch_size, num=num)
     elif dataset_type == 'val':
-        data = Dataset("data/val/images/final", batch_size=config.batch_size, num=num)
+        data = Dataset("data/val/images/final", is_train=True, batch_size=config.batch_size, num=num)
     else:
         raise ValueError("Dataset type must be one of 'train', 'test', or 'val'")
 
@@ -31,3 +31,9 @@ def test_accuracy(logits, labels):
 
     return accuracy
 
+
+def one_hot_encode(labels):
+    num_labels = len(labels)
+    one_hot_labels = np.zeros((num_labels, num_classes))
+    one_hot_labels[np.arange(num_labels), labels] = 1 # one hot encode that shit 
+    return one_hot_labels
