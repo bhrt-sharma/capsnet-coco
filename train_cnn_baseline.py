@@ -29,7 +29,7 @@ def main(args):
     learning_rate = tf.constant(cfg.initial_learning_rate)
     opt = tf.train.AdamOptimizer(cfg.initial_learning_rate)
     global_step = tf.Variable(0, name='global_step', trainable=False)
-    tf.summary.scalar('learning_rate', lrn_rate)
+    tf.summary.scalar('learning_rate', learning_rate)
 
     """ DEFINE DATA FLOW """
     batch_x = tf.placeholder(tf.float32, shape=(cfg.batch_size, D, D, 3), name="input")
