@@ -14,7 +14,7 @@ def capsules_v0(inputs, num_classes, iterations, cfg, name='CapsuleEM-V0'):
   """Replicate the network in `Matrix Capsules with EM Routing.`
   """
 
-  with tf.variable_scope(name) as scope:
+  with tf.variable_scope(name, reuse=True) as scope:
 
     # inputs [N, H, W, C] -> conv2d, 5x5, strides 2, channels 32 -> nets [N, OH, OW, 32]
     nets = _conv2d_wrapper(

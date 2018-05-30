@@ -93,20 +93,21 @@ def main(_):
         mean_train_acc += train_acc
       mean_train_acc = mean_train_acc / num_batches_in_train
       tf.summary.scalar('accuracies/train_acc', mean_train_acc)
+      return mean_train_acc
 
     def train_step_fn(session, *args, **kwargs):
-      total_loss, should_stop = train_step(session, *args, **kwargs)
+      total_loss, should_stop = slim.learning.train_step(session, *args, **kwargs)
 
       if train_step_fn.step % 100 == 0:
         accuracy = session.run(train_step_fn.train_accuracy)
         print('Step %s - Loss: %.2f Accuracy: %.2f%%' % (str(train_step_fn.step).rjust(6, '0'), total_loss, accuracy * 100))
 
+      print(train_step_fn.step)
       train_step_fn.step += 1
       return [total_loss, should_stop]
 
     train_step_fn.step = 0
-    train_step_fn.train_accuracy = get_train_accuracy
-
+    train_step_fn.train_accuracy = get_train_accuracy()
 
     slim.learning.train(
       train_tensor,
@@ -127,8 +128,8 @@ def main(_):
         },
         allow_soft_placement=True,
         log_device_placement=False,
-        train_step_fn = train_step_fn
-      )
+      ),
+      train_step_fn=train_step_fn
     )
 
 if __name__ == "__main__":
