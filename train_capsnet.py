@@ -13,8 +13,10 @@ def main(_):
 
   num_classes = 91
 
+  print("\nGetting train data...")
   train_dataset = load_mscoco('train', cfg, return_dataset=True)
-  # val_dataset = load_mscoco('val', cfg, return_dataset=True, num=1000)
+  print("\nGetting val data...")
+  val_dataset = load_mscoco('val', cfg, return_dataset=True)
 
   num_examples = train_dataset.X.shape[0]
   num_steps_per_epoch = int(num_examples / cfg.batch_size)
@@ -78,23 +80,30 @@ def main(_):
     def train_step_fn(session, *args, **kwargs):
       total_loss, should_stop = slim.learning.train_step(session, *args, **kwargs)
 
-      if (train_step_fn.step != 0) and (train_step_fn.step % 10 == 0):
+      def get_accuracy_for_dataset(dset):
         num_batches_in_train = 0
-        mean_train_acc = 0.0
-        while train_dataset.has_next_batch():
+        mean_acc = 0.0
+        while dset.has_next_batch():
           num_batches_in_train += 1
-          curr_X, curr_labels = train_dataset.next_batch()
+          curr_X, curr_labels = dset.next_batch()
           curr_X = curr_X.astype(np.float32)
           curr_train_acc, step_out = session.run([train_accuracy, global_step], feed_dict={images: curr_X, labels: curr_labels})
-          mean_train_acc += curr_train_acc
-        mean_train_acc = mean_train_acc / num_batches_in_train
-        train_dataset.reset()
-        
+          mean_acc += curr_train_acc
+        mean_acc = mean_acc / num_batches_in_train
+        dset.reset()
+        return mean_acc
+
+      def write_summary(tag, value, step_out):
         sum_writer = tf.summary.FileWriter(cfg.logdir, graph=session.graph)
         summary = tf.Summary()
-        summary.value.add(tag='accuracies/train_acc', simple_value=mean_train_acc)
+        summary.value.add(tag=tag, simple_value=value)
         sum_writer.add_summary(summary, step_out)
 
+      if (train_step_fn.step != 0) and (train_step_fn.step % num_steps_per_epoch == 0):
+        mean_train_acc = get_accuracy_for_dataset(train_dataset)
+        mean_val_acc = get_accuracy_for_dataset(val_dataset)
+        write_summary('accuracies/train_acc', mean_train_acc, step_out)
+        write_summary('accuracies/val_Acc', mean_val_acc, step_out)
         print('Step %s - Accuracy: %.2f%%' % (str(train_step_fn.step).rjust(6, '0'), mean_train_acc))
 
       train_step_fn.step += 1
