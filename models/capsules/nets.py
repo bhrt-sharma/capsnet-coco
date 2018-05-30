@@ -14,7 +14,7 @@ def capsules_v0(inputs, num_classes, iterations, cfg, name='CapsuleEM-V0'):
   """Replicate the network in `Matrix Capsules with EM Routing.`
   """
 
-  with tf.variable_scope(name, reuse=True) as scope:
+  with tf.variable_scope(name) as scope:
 
     # inputs [N, H, W, C] -> conv2d, 5x5, strides 2, channels 32 -> nets [N, OH, OW, 32]
     nets = _conv2d_wrapper(
@@ -47,11 +47,9 @@ def capsules_v0(inputs, num_classes, iterations, cfg, name='CapsuleEM-V0'):
 
 def spread_loss(labels, activations, margin, name):
   """This adds spread loss to total loss.
-
   :param labels: [N, O], where O is number of output classes, one hot vector, tf.uint8.
   :param activations: [N, O], activations.
   :param margin: margin 0.2 - 0.9 fixed schedule during training.
-
   :return: spread loss
   """
 

@@ -20,7 +20,7 @@ epsilon = 1e-9
 def _matmul_broadcast(x, y, name):
   """Compute x @ y, broadcasting over the first `N - 2` ranks.
   """
-  with tf.variable_scope(name, reuse=tf.AUTO_REUSE) as scope:
+  with tf.variable_scope(name) as scope:
     return tf.reduce_sum(
       x[..., tf.newaxis] * y[..., tf.newaxis, :, :], axis=-2
     )
@@ -92,7 +92,7 @@ def _conv2d_wrapper(inputs, shape, strides, padding, add_bias, activation_fn, na
   """Wrapper over tf.nn.conv2d().
   """
 
-  with tf.variable_scope(name, reuse=tf.AUTO_REUSE) as scope:
+  with tf.variable_scope(name) as scope:
     kernel = _get_weights_wrapper(
       name='weights', shape=shape, weights_decay_factor=0.0
     )
@@ -118,7 +118,7 @@ def _separable_conv2d_wrapper(inputs, depthwise_shape, pointwise_shape, strides,
   """Wrapper over tf.nn.separable_conv2d().
   """
 
-  with tf.variable_scope(name, reuse=tf.AUTO_REUSE) as scope:
+  with tf.variable_scope(name) as scope:
     dkernel = _get_weights_wrapper(
       name='depthwise_weights', shape=depthwise_shape, weights_decay_factor=0.0
     )
@@ -148,7 +148,7 @@ def _depthwise_conv2d_wrapper(inputs, shape, strides, padding, add_bias, activat
   """Wrapper over tf.nn.depthwise_conv2d().
   """
 
-  with tf.variable_scope(name, reuse=tf.AUTO_REUSE) as scope:
+  with tf.variable_scope(name) as scope:
     dkernel = _get_weights_wrapper(
       name='depthwise_weights', shape=shape, weights_decay_factor=0.0
     )
@@ -176,7 +176,6 @@ def _depthwise_conv2d_wrapper(inputs, shape, strides, padding, add_bias, activat
 
 def capsules_init(inputs, shape, strides, padding, pose_shape, name):
   """This constructs a primary capsule layer from a regular convolution layer.
-
   :param inputs: a regular convolution layer with shape [N, H, W, C],
     where often N is batch_size, H is height, W is width, and C is channel.
   :param shape: the shape of convolution operation kernel, [KH, KW, I, O],
@@ -186,12 +185,10 @@ def capsules_init(inputs, shape, strides, padding, pose_shape, name):
   :param pose_shape: the shape of each pose matrix, [PH, PW],
     where PH is pose height, and PW is pose width.
   :param name: name.
-
   :return: (poses, activations),
     poses: [N, H, W, C, PH, PW], activations: [N, H, W, C],
     where often N is batch_size, H is output height, W is output width, C is output channels,
     and PH is pose height, and PW is pose width.
-
   note: with respect to the paper, matrix capsules with EM routing, figure 1,
     this function provides the operation to build from
     ReLU Conv1 [batch_size, 14, 14, A] to
@@ -202,7 +199,7 @@ def capsules_init(inputs, shape, strides, padding, pose_shape, name):
 
   # assert len(pose_shape) == 2
 
-  with tf.variable_scope(name, reuse=tf.AUTO_REUSE) as scope:
+  with tf.variable_scope(name) as scope:
 
     # poses: build one by one
     # poses = []
@@ -277,7 +274,6 @@ def capsules_init(inputs, shape, strides, padding, pose_shape, name):
 
 def capsules_conv(inputs, shape, strides, iterations, name):
   """This constructs a convolution capsule layer from a primary or convolution capsule layer.
-
   :param inputs: a primary or convolution capsule layer with poses and activations,
     poses shape [N, H, W, C, PH, PW], activations shape [N, H, W, C]
   :param shape: the shape of convolution operation kernel, [KH, KW, I, O],
@@ -285,16 +281,13 @@ def capsules_conv(inputs, shape, strides, iterations, name):
   :param strides: strides [1, SH, SW, 1] w.r.t [N, H, W, C], often [1, 1, 1, 1], or [1, 2, 2, 1].
   :param iterations: number of iterations in EM routing, often 3.
   :param name: name.
-
   :return: (poses, activations) same as capsule_init().
-
   note: with respect to the paper, matrix capsules with EM routing, figure 1,
     this function provides the operation to build from
     PrimaryCapsule poses [batch_size, 14, 14, B, 4, 4], activations [batch_size, 14, 14, B] to
     ConvCapsule1 poses [batch_size, 6, 6, C, 4, 4], activations [batch_size, 6, 6, C] with
     Kernel [KH=3, KW=3, B, C, 4, 4], specifically,
     weight kernel shape [3, 3, B, C], strides [1, 2, 2, 1], pose_shape [4, 4]
-
     also, this function provides the operation to build from
     ConvCapsule1 poses [batch_size, 6, 6, C, 4, 4], activations [batch_size, 6, 6, C] to
     ConvCapsule2 poses [batch_size, 4, 4, D, 4, 4], activations [batch_size, 4, 4, D] with
@@ -316,7 +309,7 @@ def capsules_conv(inputs, shape, strides, iterations, name):
 
   # this explicit express a matrix PH x PW should be use as a viewpoint transformation matrix to adjust pose.
 
-  with tf.variable_scope(name, reuse=tf.AUTO_REUSE) as scope:
+  with tf.variable_scope(name) as scope:
 
     # kernel: [KH, KW, I, O, PW, PW]
     # yg note: if pose is irregular such as 5x3, then kernel for pose view transformation should be 3x3.
@@ -437,15 +430,12 @@ def capsules_conv(inputs, shape, strides, iterations, name):
 def capsules_fc(inputs, num_classes, iterations, name):
   """This constructs an output layer from a primary or convolution capsule layer via
     a full-connected operation with one view transformation kernel matrix shared across each channel.
-
   :param inputs: a primary or convolution capsule layer with poses and activations,
     poses shape [N, H, W, C, PH, PW], activations shape [N, H, W, C]
   :param num_classes: number of classes.
   :param iterations: number of iterations in EM routing, often 3.
   :param name: name.
-
   :return: (pose, activation) same as capsule_init().
-
   note: with respect to the paper, matrix capsules with EM routing, figure 1,
     This is the D -> E in figure.
     This step includes two major sub-steps:
@@ -468,7 +458,7 @@ def capsules_fc(inputs, num_classes, iterations, name):
 
   inputs_activations_shape = inputs_activations.get_shape().as_list()
 
-  with tf.variable_scope(name, reuse=tf.AUTO_REUSE) as scope:
+  with tf.variable_scope(name) as scope:
 
     # kernel: [I, O, PW, PW]
     # yg note: if pose is irregular such as 5x3, then kernel for pose view transformation should be 3x3.
@@ -597,7 +587,6 @@ def capsules_fc(inputs, num_classes, iterations, name):
 
 def matrix_capsules_em_routing(votes, i_activations, beta_v, beta_a, iterations, name):
   """The EM routing between input capsules (i) and output capsules (o).
-
   :param votes: [N, OH, OW, KH x KW x I, O, PH x PW] from capsule_conv(),
     or [N, KH x KW x I, O, PH x PW] from capsule_fc()
   :param i_activation: [N, OH, OW, KH x KW x I, O] from capsule_conv(),
@@ -608,9 +597,7 @@ def matrix_capsules_em_routing(votes, i_activations, beta_v, beta_a, iterations,
     or [1, O] from capsule_fc()
   :param iterations: number of iterations in EM routing, often 3.
   :param name: name.
-
   :return: (pose, activation) of output capsules.
-
   note: the comment assumes arguments from capsule_conv(), remove OH, OW if from capsule_fc(),
     the function make sure is applicable to both cases by using negative index in argument axis.
   """
@@ -623,7 +610,7 @@ def matrix_capsules_em_routing(votes, i_activations, beta_v, beta_a, iterations,
   # i_activations: [N, OH, OW, KH x KW x I]
   i_activations_shape = i_activations.get_shape().as_list()
 
-  with tf.variable_scope(name, reuse=tf.AUTO_REUSE) as scope:
+  with tf.variable_scope(name) as scope:
 
     # note: match rr shape, i_activations shape with votes shape for broadcasting in EM routing
 
@@ -648,7 +635,6 @@ def matrix_capsules_em_routing(votes, i_activations, beta_v, beta_a, iterations,
 
     def m_step(rr, votes, i_activations, beta_v, beta_a, inverse_temperature):
       """The M-Step in EM Routing.
-
       :param rr: [1, 1, 1, KH x KW x I, O, 1], or [N, KH x KW x I, O, 1],
         routing assignments from each input capsules (i) to each output capsules (o).
       :param votes: [N, OH, OW, KH x KW x I, O, PH x PW], or [N, KH x KW x I, O, PH x PW],
@@ -660,7 +646,6 @@ def matrix_capsules_em_routing(votes, i_activations, beta_v, beta_a, iterations,
       :param beta_a: cost of describing capsules with one mean in across all h-th compenents,
         should be learned discriminatively.
       :param inverse_temperature: lambda, increase over steps with respect to a fixed schedule.
-
       :return: (o_mean, o_stdv, o_activation)
       """
 
@@ -742,12 +727,10 @@ def matrix_capsules_em_routing(votes, i_activations, beta_v, beta_a, iterations,
 
     def e_step(o_mean, o_stdv, o_activations, votes):
       """The E-Step in EM Routing.
-
       :param o_mean: [N, OH, OW, 1, O, PH x PW], or [N, 1, O, PH x PW],
       :param o_stdv: [N, OH, OW, 1, O, PH x PW], or [N, 1, O, PH x PW],
       :param o_activations: [N, OH, OW, 1, O, 1], or [N, 1, O, 1],
       :param votes: [N, OH, OW, KH x KW x I, O, PH x PW], or [N, KH x KW x I, O, PH x PW],
-
       :return: rr
       """
 
@@ -827,4 +810,3 @@ def matrix_capsules_em_routing(votes, i_activations, beta_v, beta_a, iterations,
   return poses, activations
 
 # ------------------------------------------------------------------------------#
-

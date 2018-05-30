@@ -13,7 +13,7 @@ def main(_):
 
   num_classes = 91
 
-  train_dataset = load_mscoco('train', cfg, return_dataset=True, num=1000)
+  train_dataset = load_mscoco('train', cfg, return_dataset=True)
   # val_dataset = load_mscoco('val', cfg, return_dataset=True, num=1000)
 
   num_examples = train_dataset.X.shape[0]
@@ -67,13 +67,13 @@ def main(_):
       decay_rate = 0.8,
       staircase = True)
 
-    optimizer = tf.train.AdamOptimizer(learning_rate)
+    optimizer = tf.train.AdamOptimizer(learning_rate=cfg.initial_learning_rate)
 
     train_tensor = slim.learning.create_train_op(
       loss, optimizer, global_step=global_step, clip_gradient_norm=4.0
     )
 
-    print("\nTraining...\n")
+    print("\nTraining... Learning rate: %0.5f\n" % cfg.initial_learning_rate)
 
     def train_step_fn(session, *args, **kwargs):
       total_loss, should_stop = slim.learning.train_step(session, *args, **kwargs)
@@ -85,7 +85,7 @@ def main(_):
           num_batches_in_train += 1
           curr_X, curr_labels = train_dataset.next_batch()
           curr_X = curr_X.astype(np.float32)
-          curr_train_acc, step_out = session.run([train_accuracy, global_step], feed_dict={images: curr_X, labels: curr_labels})
+          curr_train_acc = session.run([train_accuracy], feed_dict={images: curr_X, labels: curr_labels})
           mean_train_acc += curr_train_acc
         mean_train_acc = mean_train_acc / num_batches_in_train
         train_dataset.reset()
@@ -93,7 +93,7 @@ def main(_):
         sum_writer = tf.summary.FileWriter(cfg.logdir, graph=session.graph)
         summary = tf.Summary()
         summary.value.add(tag='accuracies/train_acc', simple_value=mean_train_acc)
-        sum_writer.add_summary(summary, step_out)
+        sum_writer.add_summary(summary, tf.train.global_step())
 
         print('Step %s - Accuracy: %.2f%%' % (str(train_step_fn.step).rjust(6, '0'), mean_train_acc))
 
@@ -121,8 +121,8 @@ def main(_):
         },
         allow_soft_placement=True,
         log_device_placement=False,
-      ),
-      train_step_fn=train_step_fn
+      )
+      # train_step_fn=train_step_fn
     )
 
 if __name__ == "__main__":
