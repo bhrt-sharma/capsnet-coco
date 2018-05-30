@@ -30,4 +30,3 @@ def test_accuracy(logits, labels):
     accuracy = tf.reduce_sum(tf.cast(correct_preds, tf.float32)) / cfg.batch_size
 
     return accuracy
-

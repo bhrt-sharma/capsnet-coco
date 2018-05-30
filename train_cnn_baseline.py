@@ -13,8 +13,11 @@ from models.cnn_baseline import build_cnn_baseline, cross_ent_loss
 def main(args):
     tf.set_random_seed(1234)
 
+    assert len(args) == 2 and isinstance(args[1], str)
+    experiment_name = args[1]
     """ GET DATA """
-    dataset = load_mscoco(cfg.phase, cfg, return_dataset=True)
+    dataset = load_mscoco(cfg.phase, cfg, num=100, return_dataset=True)
+    val_dataset = load_mscoco('val', cfg, num=100, return_dataset=True)
     dataset_name = 'mscoco'
     checkpoints_to_keep = 1
     N, D = dataset.X.shape[0], dataset.X.shape[1]
@@ -40,7 +43,6 @@ def main(args):
     tf.summary.scalar('train_acc', acc)
     tf.summary.scalar('recon_loss', recon_loss)
     tf.summary.scalar('all_loss', loss)
-
     """Compute gradient."""
     def _learning_rate_decay_fn(learning_rate, global_step):
         return tf.train.exponential_decay(
@@ -59,7 +61,7 @@ def main(args):
                 learning_rate_decay_fn = _learning_rate_decay_fn)
 
     # set best checkpoint
-    bestmodel_dir = os.path.join(cfg.logdir + 'cnn_baseline/', 'best_checkpoint')
+    bestmodel_dir = os.path.join(cfg.logdir + 'cnn_baseline/{}'.format(experiment_name), 'best_checkpoint')
     if not os.path.exists(bestmodel_dir):
         os.makedirs(bestmodel_dir)
     bestmodel_ckpt_path = os.path.join(bestmodel_dir, "cnn_best.ckpt")
@@ -74,13 +76,16 @@ def main(args):
             sess.run(tf.global_variables_initializer())
             tf.get_default_graph().finalize()
 
-            """Set summary writer"""
+            """Set summary writers"""
             if not os.path.exists(cfg.logdir + '/cnn_baseline/{}_images/train_log/'.format(cfg.phase)):
                 os.makedirs(cfg.logdir + '/cnn_baseline/{}_images/train_log/'.format(cfg.phase))
             summary_writer = tf.summary.FileWriter(
                 cfg.logdir + '/cnn_baseline/{}_images/train_log/'.format(cfg.phase), graph=sess.graph)
 
-
+            # if not os.path.exists(cfg.logdir + '/cnn_baseline/{}_images/val_log/'.format(cfg.phase)):
+            #     os.makedirs(cfg.logdir + '/cnn_baseline/{}_images/val_log/'.format(cfg.phase))
+            # val_writer = tf.summary.FileWriter(
+            #     cfg.logdir + '/cnn_baseline/{}_images/val_log/'.format(cfg.phase), graph=sess.graph)
             """Main loop"""
             best_loss = None
             for e in list(range(cfg.num_epochs)):
@@ -94,14 +99,34 @@ def main(args):
 
                 #save model after every epoch 
                 print('saving model now :)')
-                ckpt_path = os.path.join(
-                    cfg.logdir + '/cnn_baseline/{}'.format(dataset_name), 'model-{:.4f}.ckpt'.format(loss_value))
-                train_saver.save(sess, ckpt_path, global_step=step)
+                train_ckpt_path = os.path.join(
+                    cfg.logdir + '/cnn_baseline/{}'.format(experiment_name), 'model-{:.4f}.ckpt'.format(loss_value))
+                train_saver.save(sess, train_ckpt_path, global_step=step)
 
                 #eval on validation loss 
+                loss_per_val_batch = 0.0
+                acc_per_val_batch = 0.0
+                num_val_batches = 0
+                while dataset.has_next_batch():
+                    val_batch = dataset.next_batch()
+                    feed_dict = {batch_x: val_batch[0].astype(np.float32), batch_labels: val_batch[1]}
+                    dev_loss, dev_acc, summary_str, step_out = sess.run([loss, acc, summary_op, global_step], feed_dict=feed_dict)
+                    loss_per_val_batch += loss_value
+                    acc_per_val_batch += dev_acc
+                    num_val_batches +=1 
+                avg_val_loss = loss_per_val_batch / num_val_batches
+                avg_val_acc = acc_per_val_batch / num_val_batches
+                write_summary(avg_val_loss, "dev/avg_validation_loss", summary_writer, global_step)
+                write_summary(avg_val_acc, "dev/avg_validation_acc", summary_writer, global_step)
 
-                # if best_loss is None or loss_value < best_loss:
-                #     bestmodel_saver.save(sess, bestmodel_ckpt_path,global_step=step)
+                if best_acc is None or avg_val_acc > best_acc:
+                    bestmodel_saver.save(sess, bestmodel_ckpt_path, global_step=step)
+                    best_acc = avg_val_acc
 
+def write_summary(value, tag, summary_writer, global_step):
+    """Write a single summary value to tensorboard"""
+    summary = tf.Summary()
+    summary.value.add(tag=tag, simple_value=value)
+    summary_writer.add_summary(summary, global_step)
 if __name__ == "__main__":
     tf.app.run()
