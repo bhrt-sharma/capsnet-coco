@@ -13,7 +13,7 @@ def main(_):
 
   num_classes = 91
 
-  train_dataset = load_mscoco('train', cfg, return_dataset=True)
+  train_dataset = load_mscoco('train', cfg, return_dataset=True, num=1000)
   # val_dataset = load_mscoco('val', cfg, return_dataset=True, num=1000)
 
   num_examples = train_dataset.X.shape[0]
@@ -78,7 +78,7 @@ def main(_):
     def train_step_fn(session, *args, **kwargs):
       total_loss, should_stop = slim.learning.train_step(session, *args, **kwargs)
 
-      if train_step_fn.step % 100 == 0:
+      if train_step_fn.step % 10 == 0:
         num_batches_in_train = 0
         mean_train_acc = 0.0
         while train_dataset.has_next_batch():
@@ -88,6 +88,7 @@ def main(_):
           curr_train_acc, step_out = session.run([train_accuracy, global_step], feed_dict={images: curr_X, labels: curr_labels})
           mean_train_acc += curr_train_acc
         mean_train_acc = mean_train_acc / num_batches_in_train
+        train_dataset.reset()
         
         sum_writer = tf.summary.FileWriter(cfg.logdir, graph=session.graph)
         summary = tf.Summary()
