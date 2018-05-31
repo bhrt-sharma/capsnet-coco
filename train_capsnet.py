@@ -14,9 +14,9 @@ def main(_):
   num_classes = 91
 
   print("\nGetting train data...")
-  train_dataset = load_mscoco('train', cfg, return_dataset=True)
+  train_dataset = load_mscoco('train', cfg, return_dataset=True, num=10000)
   print("\nGetting val data...")
-  val_dataset = load_mscoco('val', cfg, return_dataset=True)
+  val_dataset = load_mscoco('val', cfg, return_dataset=True, num=1000)
 
   num_examples = train_dataset.X.shape[0]
   num_steps_per_epoch = int(num_examples / cfg.batch_size)
@@ -81,7 +81,6 @@ def main(_):
       total_loss, should_stop = slim.learning.train_step(session, *args, **kwargs)
 
       def get_accuracy_for_dataset(dset):
-        print("Getting accuracy... ")
         num_batches_in_train = 0
         mean_acc = 0.0
         while dset.has_next_batch():
@@ -92,7 +91,7 @@ def main(_):
           mean_acc += curr_train_acc
         mean_acc = mean_acc / num_batches_in_train
         dset.reset()
-        return mean_acc
+        return mean_acc, step_out
 
       def write_summary(tag, value, step_out):
         sum_writer = tf.summary.FileWriter(cfg.logdir, graph=session.graph)
@@ -101,9 +100,11 @@ def main(_):
         sum_writer.add_summary(summary, step_out)
 
       if (train_step_fn.step % 100 == 0):
-        mean_train_acc = get_accuracy_for_dataset(train_dataset)
-        mean_val_acc = get_accuracy_for_dataset(val_dataset)
+        mean_train_acc, step_out = get_accuracy_for_dataset(train_dataset)
+        mean_val_acc, step_out = get_accuracy_for_dataset(val_dataset)
+        print("Getting train accuracy... ")
         write_summary('accuracies/train_acc', mean_train_acc, step_out)
+        print("Getting val accuracy... ")
         write_summary('accuracies/val_acc', mean_val_acc, step_out)
         print('Step %s - Train Accuracy: %.2f%% - Val Accuracy: %.2f%%' % (str(train_step_fn.step).rjust(6, '0'), mean_train_acc, mean_val_acc))
 
