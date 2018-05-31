@@ -62,7 +62,7 @@ def main(_):
     val_accuracy = test_accuracy(val_activations, val_labels)
 
     tf.summary.scalar('accuracies/training_accuracy', train_accuracy)
-    tf.summary.scalar('accuracies/val_accuracy', val_accuracy)
+    # tf.summary.scalar('accuracies/val_accuracy', val_accuracy)
 
     # margin schedule
     # margin increase from 0.2 to 0.9 after margin_schedule_epoch_achieve_max
@@ -99,37 +99,37 @@ def main(_):
 
     print("\nTraining... Learning rate: %0.5f\n" % cfg.initial_learning_rate)
 
-    # def train_step_fn(session, *args, **kwargs):
-    #   total_loss, should_stop = slim.learning.train_step(session, *args, **kwargs)
+    def train_step_fn(session, *args, **kwargs):
+      total_loss, should_stop = slim.learning.train_step(session, *args, **kwargs)
 
-    #   def get_accuracy_for_dataset(dset):
-    #     num_batches_in_train = 0
-    #     mean_acc = 0.0
-    #     while dset.has_next_batch():
-    #       num_batches_in_train += 1
-    #       curr_X, curr_labels = dset.next_batch()
-    #       curr_X = curr_X.astype(np.float32)
-    #       curr_train_acc = session.run(train_accuracy, feed_dict={images: curr_X, labels: curr_labels})
-    #       mean_acc += curr_train_acc
-    #     mean_acc = mean_acc / num_batches_in_train
-    #     dset.reset()
-    #     return mean_acc
+      def get_accuracy_for_dataset(dset):
+        num_batches_counted = 0
+        mean_acc = 0.0
+        while dset.has_next_batch():
+          num_batches_counted += 1
+          curr_X, curr_labels = dset.next_batch()
+          curr_X = curr_X.astype(np.float32)
+          curr_acc = session.run(val_accuracy, feed_dict={images: curr_X, labels: curr_labels})
+          mean_acc += curr_acc
+        mean_acc = mean_acc / num_batches_in_train
+        dset.reset()
+        return mean_acc
 
-    #   def write_summary(tag, value, step_out):
-    #     summary = tf.Summary()
-    #     summary.value.add(tag=tag, simple_value=value)
-    #     sum_writer.add_summary(summary, step_out)
+      def write_summary(tag, value, step_out):
+        summary = tf.Summary()
+        summary.value.add(tag=tag, simple_value=value)
+        sum_writer.add_summary(summary, step_out)
 
-    #   if (train_step_fn.step % 100 == 0):
-    #     print("Getting train/val accuracy... ")
-    #     mean_val_acc = get_accuracy_for_dataset(val_dataset)
-    #     # write_summary('accuracies/val_acc', mean_val_acc, train_step_fn.step)
-    #     print('Step %s - Val Accuracy: %.2f' % (str(train_step_fn.step).rjust(6, '0'), mean_val_acc))
+      if (train_step_fn.step % 100 == 0):
+        print("Getting train/val accuracy... ")
+        mean_val_acc = get_accuracy_for_dataset(val_dataset)
+        write_summary('accuracies/val_acc', mean_val_acc, train_step_fn.step)
+        print('Step %s - Val Accuracy: %.2f' % (str(train_step_fn.step).rjust(6, '0'), mean_val_acc))
 
-    #   train_step_fn.step += 1
-    #   return [total_loss, should_stop]
+      train_step_fn.step += 1
+      return [total_loss, should_stop]
 
-    # train_step_fn.step = 0
+    train_step_fn.step = 0
 
     slim.learning.train(
       train_tensor,
@@ -150,7 +150,8 @@ def main(_):
         },
         allow_soft_placement=True,
         log_device_placement=False,
-      )
+      ),
+      train_step_fn = train_step_fn,
     )
 
 if __name__ == "__main__":
