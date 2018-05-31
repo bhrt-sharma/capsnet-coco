@@ -109,9 +109,9 @@ def main(_):
           num_batches_counted += 1
           curr_X, curr_labels = dset.next_batch()
           curr_X = curr_X.astype(np.float32)
-          curr_acc = session.run(val_accuracy, feed_dict={images: curr_X, labels: curr_labels})
+          curr_acc = session.run(val_accuracy, feed_dict={val_images: curr_X, val_labels: curr_labels})
           mean_acc += curr_acc
-        mean_acc = mean_acc / num_batches_in_train
+        mean_acc = mean_acc / num_batches_counted
         dset.reset()
         return mean_acc
 
