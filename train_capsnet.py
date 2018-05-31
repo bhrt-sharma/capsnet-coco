@@ -11,12 +11,15 @@ from models.capsules import nets
 def main(_):
   tf.logging.set_verbosity(tf.logging.INFO)
 
-  num_classes = 91
+  num_classes = 2
 
   print("\nGetting train data...")
-  train_dataset = load_mscoco('train', cfg, return_dataset=True, num=10000)
+  train_dataset = load_mscoco('train', cfg, return_dataset=True)
   print("\nGetting val data...")
-  val_dataset = load_mscoco('val', cfg, return_dataset=True, num=1000)
+  val_dataset = load_mscoco('val', cfg, return_dataset=True)
+
+  train_dataset.y = np.asarray([x if x != 62 else 0 for x in train_dataset.y])
+  val_dataset.y = np.asarray([x if x != 62 else 0 for x in val_dataset.y])
 
   num_examples = train_dataset.X.shape[0]
   num_steps_per_epoch = int(num_examples / cfg.batch_size)
@@ -87,11 +90,11 @@ def main(_):
           num_batches_in_train += 1
           curr_X, curr_labels = dset.next_batch()
           curr_X = curr_X.astype(np.float32)
-          curr_train_acc, step_out = session.run([train_accuracy, global_step], feed_dict={images: curr_X, labels: curr_labels})
+          curr_train_acc = session.run(train_accuracy, feed_dict={images: curr_X, labels: curr_labels})
           mean_acc += curr_train_acc
         mean_acc = mean_acc / num_batches_in_train
         dset.reset()
-        return mean_acc, step_out
+        return mean_acc
 
       def write_summary(tag, value, step_out):
         sum_writer = tf.summary.FileWriter(cfg.logdir, graph=session.graph)
@@ -100,13 +103,12 @@ def main(_):
         sum_writer.add_summary(summary, step_out)
 
       if (train_step_fn.step % 100 == 0):
-        mean_train_acc, step_out = get_accuracy_for_dataset(train_dataset)
-        mean_val_acc, step_out = get_accuracy_for_dataset(val_dataset)
-        print("Getting train accuracy... ")
-        write_summary('accuracies/train_acc', mean_train_acc, step_out)
-        print("Getting val accuracy... ")
-        write_summary('accuracies/val_acc', mean_val_acc, step_out)
-        print('Step %s - Train Accuracy: %.2f%% - Val Accuracy: %.2f%%' % (str(train_step_fn.step).rjust(6, '0'), mean_train_acc, mean_val_acc))
+        print("Getting train/val accuracy... ")
+        mean_train_acc = get_accuracy_for_dataset(train_dataset)
+        mean_val_acc = get_accuracy_for_dataset(val_dataset)
+        # write_summary('accuracies/train_acc', mean_train_acc, train_step_fn.step)
+        # write_summary('accuracies/val_acc', mean_val_acc, train_step_fn.step)
+        print('Step %s - Train Accuracy: %.2f - Val Accuracy: %.2f' % (str(train_step_fn.step).rjust(6, '0'), mean_train_acc, mean_val_acc))
 
       train_step_fn.step += 1
       return [total_loss, should_stop]
@@ -117,7 +119,7 @@ def main(_):
       train_tensor,
       logdir=cfg.logdir,
       log_every_n_steps=10,
-      save_summaries_secs=60 * 5,
+      save_summaries_secs=60,
       saver=tf.train.Saver(max_to_keep=100),
       save_interval_secs=600,
       # yg: add session_config to limit gpu usage and allow growth
