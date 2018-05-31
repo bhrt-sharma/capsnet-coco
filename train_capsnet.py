@@ -10,7 +10,6 @@ from models.capsules import nets
 
 def main(_):
   tf.logging.set_verbosity(tf.logging.INFO)
-
   num_classes = 2
 
   print("\nGetting train data...")
@@ -33,7 +32,9 @@ def main(_):
     images, labels = train_dataset.X.astype(np.float32), train_dataset.y
     one_hot_labels = one_hot_encode(labels, num_classes)
 
-    # create batches
+    val_images, val_labels = val_dataset.X.astype(np.float32), val_dataset.y
+
+    # create batches for val and train
     data_queues = tf.train.slice_input_producer([images, one_hot_labels, labels])
     images, one_hot_labels, labels = tf.train.shuffle_batch(
       data_queues,
@@ -43,9 +44,24 @@ def main(_):
       min_after_dequeue=cfg.batch_size * 32,
       allow_smaller_final_batch=False)
 
-    poses, activations = nets.capsules_v0(images, num_classes=num_classes, iterations=cfg.iter_routing, cfg=cfg, name='capsulesEM-V0')
+    val_queues = tf.train.slice_input_producer([val_images, val_labels])
+    val_images, val_labels = tf.train.shuffle_batch(
+      val_queues,
+      num_threads=16,
+      batch_size=cfg.batch_size,
+      capacity=cfg.batch_size * 64,
+      min_after_dequeue=cfg.batch_size * 32,
+      allow_smaller_final_batch=False)
+
+    with tf.variable_scope("model", reuse=True) as scope:
+      poses, activations = nets.capsules_v0(images, num_classes=num_classes, iterations=cfg.iter_routing, cfg=cfg, name='capsulesEM-V0')
+      _, val_activations = nets.capsules_v0(val_images, num_classes=num_classes, iterations=cfg.iter_routing, cfg=cfg, name='capsulesEM-V0')
 
     train_accuracy = test_accuracy(activations, labels)
+    val_accuracy = test_accuracy(val_activations, val_labels)
+
+    tf.summary.scalar('accuracies/training_accuracy', train_accuracy)
+    tf.summary.scalar('accuracies/val_accuracy', train_accuracy)
 
     # margin schedule
     # margin increase from 0.2 to 0.9 after margin_schedule_epoch_achieve_max
@@ -65,7 +81,6 @@ def main(_):
     )
 
     tf.summary.scalar('losses/spread_loss', loss)
-    tf.summary.scalar('accuracies/training_accuracy', train_accuracy)
     
     # exponential learning rate decay
     learning_rate = tf.train.exponential_decay(
@@ -83,35 +98,35 @@ def main(_):
 
     print("\nTraining... Learning rate: %0.5f\n" % cfg.initial_learning_rate)
 
-    def train_step_fn(session, *args, **kwargs):
-      total_loss, should_stop = slim.learning.train_step(session, *args, **kwargs)
+    # def train_step_fn(session, *args, **kwargs):
+    #   total_loss, should_stop = slim.learning.train_step(session, *args, **kwargs)
 
-      def get_accuracy_for_dataset(dset):
-        num_batches_in_train = 0
-        mean_acc = 0.0
-        while dset.has_next_batch():
-          num_batches_in_train += 1
-          curr_X, curr_labels = dset.next_batch()
-          curr_X = curr_X.astype(np.float32)
-          curr_train_acc = session.run(train_accuracy, feed_dict={images: curr_X, labels: curr_labels})
-          mean_acc += curr_train_acc
-        mean_acc = mean_acc / num_batches_in_train
-        dset.reset()
-        return mean_acc
+    #   def get_accuracy_for_dataset(dset):
+    #     num_batches_in_train = 0
+    #     mean_acc = 0.0
+    #     while dset.has_next_batch():
+    #       num_batches_in_train += 1
+    #       curr_X, curr_labels = dset.next_batch()
+    #       curr_X = curr_X.astype(np.float32)
+    #       curr_train_acc = session.run(train_accuracy, feed_dict={images: curr_X, labels: curr_labels})
+    #       mean_acc += curr_train_acc
+    #     mean_acc = mean_acc / num_batches_in_train
+    #     dset.reset()
+    #     return mean_acc
 
-      def write_summary(tag, value, step_out):
-        summary = tf.Summary()
-        summary.value.add(tag=tag, simple_value=value)
-        sum_writer.add_summary(summary, step_out)
+    #   def write_summary(tag, value, step_out):
+    #     summary = tf.Summary()
+    #     summary.value.add(tag=tag, simple_value=value)
+    #     sum_writer.add_summary(summary, step_out)
 
-      if (train_step_fn.step % 100 == 0):
-        print("Getting train/val accuracy... ")
-        mean_val_acc = get_accuracy_for_dataset(val_dataset)
-        # write_summary('accuracies/val_acc', mean_val_acc, train_step_fn.step)
-        print('Step %s - Val Accuracy: %.2f' % (str(train_step_fn.step).rjust(6, '0'), mean_val_acc))
+    #   if (train_step_fn.step % 100 == 0):
+    #     print("Getting train/val accuracy... ")
+    #     mean_val_acc = get_accuracy_for_dataset(val_dataset)
+    #     # write_summary('accuracies/val_acc', mean_val_acc, train_step_fn.step)
+    #     print('Step %s - Val Accuracy: %.2f' % (str(train_step_fn.step).rjust(6, '0'), mean_val_acc))
 
-      train_step_fn.step += 1
-      return [total_loss, should_stop]
+    #   train_step_fn.step += 1
+    #   return [total_loss, should_stop]
 
     train_step_fn.step = 0
 
@@ -134,8 +149,7 @@ def main(_):
         },
         allow_soft_placement=True,
         log_device_placement=False,
-      ),
-      train_step_fn=train_step_fn
+      )
     )
 
 if __name__ == "__main__":
