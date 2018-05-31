@@ -6,7 +6,7 @@ from scipy.ndimage import imread
 import pdb
 
 ORIGIN_FOLDER = 'data/train/images/masked/'
-TARGET_CATEGORIES = [1, 18] # 1 is person, 18 is dog
+TARGET_CATEGORIES = [1, 62] # 1 is person, 62 is chair, 3 is car. 17 is cat, 18 is dog
 TARGET_NUMBER_OF_IMAGES_PER_CLASS = {
 	'train': 5000,
 	'val': 1000,
@@ -26,9 +26,9 @@ def copy_good_images_over():
 	test_files = []
 
 	for category in TARGET_CATEGORIES:
-		train_files = train_files + dataset_split['train'][category]
-		val_files = val_files + dataset_split['val'][category]
-		test_files = test_files + dataset_split['test'][category]
+		train_files = train_files + dataset_split['train'][str(category)]
+		val_files = val_files + dataset_split['val'][str(category)]
+		test_files = test_files + dataset_split['test'][str(category)]
 
 	for f_name in tqdm(train_files, desc="copying train files"):
 		os.system("cp {}/{} {}".format(ORIGIN_FOLDER, f_name, TRAIN_FOLDER))
@@ -42,7 +42,7 @@ def copy_good_images_over():
 # defined by the variance of color pixels
 def is_good_image(image):
 	std = np.std(image)
-	return std > 7 # lol 
+	return std > 5 # lol 
 
 def find_good_images():
 	image_files = os.listdir(ORIGIN_FOLDER)
@@ -68,7 +68,7 @@ def find_good_images():
 				img_file = category_image_files.pop(0)
 				I = imread(ORIGIN_FOLDER + img_file, mode="L")
 				if is_good_image(I):
-					if (num_images_obtained % 100) == 0:
+					if (num_images_obtained % 500) == 0:
 						print("Obtained %d good images for %s set" % (num_images_obtained, dataset))
 					images_to_keep[dataset][category].append(img_file)
 					num_images_obtained += 1
