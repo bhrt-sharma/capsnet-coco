@@ -20,19 +20,24 @@ TEST_FOLDER = 'data/test/images/simple-2/'
 def copy_good_images_over():
 	with open("data/good_train_test_val_split.json", "r") as f:
 		dataset_split = json.load(f)
-		
-	train_files = dataset_split['train']
-    val_files = dataset_split['val']
-    test_files = dataset_split['test']
 
-    for f_name in tqdm(train_files, desc="copying train files"):
-        os.system("cp {}/{} {}".format(ORIGIN_FOLDER, f_name, TRAIN_FOLDER))
+	train_files = []
+	val_files = []
+	test_files = []
 
-    for f_name in tqdm(val_files, desc="copying val files"):
-        os.system("cp {}/{} {}".format(ORIGIN_FOLDER, f_name, VAL_FOLDER))
+	for category in TARGET_CATEGORIES:
+		train_files = train_files + dataset_split['train'][category]
+		val_files = val_files + dataset_split['val'][category]
+		test_files = test_files + dataset_split['test'][category]
 
-    for f_name in tqdm(test_files, desc="copying test files"):
-        os.system("cp {}/{} {}".format(ORIGIN_FOLDER, f_name, TEST_FOLDER))
+	for f_name in tqdm(train_files, desc="copying train files"):
+		os.system("cp {}/{} {}".format(ORIGIN_FOLDER, f_name, TRAIN_FOLDER))
+
+	for f_name in tqdm(val_files, desc="copying val files"):
+		os.system("cp {}/{} {}".format(ORIGIN_FOLDER, f_name, VAL_FOLDER))
+
+	for f_name in tqdm(test_files, desc="copying test files"):
+		os.system("cp {}/{} {}".format(ORIGIN_FOLDER, f_name, TEST_FOLDER))
 
 # defined by the variance of color pixels
 def is_good_image(image):
