@@ -33,6 +33,7 @@ def main(_):
     one_hot_labels = one_hot_encode(labels, num_classes)
 
     val_images, val_labels = val_dataset.X.astype(np.float32), val_dataset.y
+    val_one_hot_labels = one_hot_encode(val_labels, num_classes)
 
     # create batches for val and train
     data_queues = tf.train.slice_input_producer([images, one_hot_labels, labels])
@@ -44,8 +45,8 @@ def main(_):
       min_after_dequeue=cfg.batch_size * 32,
       allow_smaller_final_batch=False)
 
-    val_queues = tf.train.slice_input_producer([val_images, val_labels])
-    val_images, val_labels = tf.train.shuffle_batch(
+    val_queues = tf.train.slice_input_producer([val_images, val_one_hot_labels, val_labels])
+    val_images, val_one_hot_labels, val_labels = tf.train.shuffle_batch(
       val_queues,
       num_threads=16,
       batch_size=cfg.batch_size,
@@ -81,7 +82,12 @@ def main(_):
       one_hot_labels, activations, margin=margin, name='spread_loss'
     )
 
+    val_loss = nets.spread_loss(
+      val_one_hot_labels, val_activations, margin=margin, name='val_spread_loss'
+    )
+
     tf.summary.scalar('losses/spread_loss', loss)
+    tf.summary.scalar('losses/val_spread_loss', val_loss)
     
     # exponential learning rate decay
     learning_rate = tf.train.exponential_decay(
