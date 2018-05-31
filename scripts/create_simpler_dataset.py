@@ -1,6 +1,7 @@
 import os
 import json
 import numpy as np
+from tqdm import tqdm
 from scipy.ndimage import imread
 import pdb
 
@@ -12,8 +13,26 @@ TARGET_NUMBER_OF_IMAGES_PER_CLASS = {
 	'test': 1000
 }
 
+TRAIN_FOLDER = 'data/train/images/simple-2/'
+VAL_FOLDER = 'data/val/images/simple-2/'
+TEST_FOLDER = 'data/test/images/simple-2/'
+
 def copy_good_images_over():
-	pass
+	with open("data/good_train_test_val_split.json", "r") as f:
+		dataset_split = json.load(f)
+		
+	train_files = dataset_split['train']
+    val_files = dataset_split['val']
+    test_files = dataset_split['test']
+
+    for f_name in tqdm(train_files, desc="copying train files"):
+        os.system("cp {}/{} {}".format(ORIGIN_FOLDER, f_name, TRAIN_FOLDER))
+
+    for f_name in tqdm(val_files, desc="copying val files"):
+        os.system("cp {}/{} {}".format(ORIGIN_FOLDER, f_name, VAL_FOLDER))
+
+    for f_name in tqdm(test_files, desc="copying test files"):
+        os.system("cp {}/{} {}".format(ORIGIN_FOLDER, f_name, TEST_FOLDER))
 
 # defined by the variance of color pixels
 def is_good_image(image):
@@ -53,5 +72,5 @@ def find_good_images():
 		json.dump(images_to_keep, f)
 
 if __name__ == '__main__':
-	find_good_images()
-	# copy_good_images_over()
+	# find_good_images()
+	copy_good_images_over()
