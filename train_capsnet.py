@@ -53,15 +53,16 @@ def main(_):
       min_after_dequeue=cfg.batch_size * 32,
       allow_smaller_final_batch=False)
 
-    with tf.variable_scope("model", reuse=True) as scope:
+    with tf.variable_scope("model") as scope:
       poses, activations = nets.capsules_v0(images, num_classes=num_classes, iterations=cfg.iter_routing, cfg=cfg, name='capsulesEM-V0')
+      scope.reuse_variables()
       _, val_activations = nets.capsules_v0(val_images, num_classes=num_classes, iterations=cfg.iter_routing, cfg=cfg, name='capsulesEM-V0')
 
     train_accuracy = test_accuracy(activations, labels)
     val_accuracy = test_accuracy(val_activations, val_labels)
 
     tf.summary.scalar('accuracies/training_accuracy', train_accuracy)
-    tf.summary.scalar('accuracies/val_accuracy', train_accuracy)
+    tf.summary.scalar('accuracies/val_accuracy', val_accuracy)
 
     # margin schedule
     # margin increase from 0.2 to 0.9 after margin_schedule_epoch_achieve_max
@@ -128,7 +129,7 @@ def main(_):
     #   train_step_fn.step += 1
     #   return [total_loss, should_stop]
 
-    train_step_fn.step = 0
+    # train_step_fn.step = 0
 
     slim.learning.train(
       train_tensor,
