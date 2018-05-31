@@ -28,6 +28,8 @@ def main(_):
     with tf.device('/cpu:0'):
       global_step = tf.train.get_or_create_global_step()
 
+    sum_writer = tf.summary.FileWriter(cfg.logdir, graph=tf.Session().graph)
+
     images, labels = train_dataset.X.astype(np.float32), train_dataset.y
     one_hot_labels = one_hot_encode(labels, num_classes)
 
@@ -63,6 +65,7 @@ def main(_):
     )
 
     tf.summary.scalar('losses/spread_loss', loss)
+    tf.summary.scalar('accuracies/training_accuracy', train_accuracy)
     
     # exponential learning rate decay
     learning_rate = tf.train.exponential_decay(
@@ -97,18 +100,15 @@ def main(_):
         return mean_acc
 
       def write_summary(tag, value, step_out):
-        sum_writer = tf.summary.FileWriter(cfg.logdir, graph=session.graph)
         summary = tf.Summary()
         summary.value.add(tag=tag, simple_value=value)
         sum_writer.add_summary(summary, step_out)
 
       if (train_step_fn.step % 100 == 0):
         print("Getting train/val accuracy... ")
-        mean_train_acc = get_accuracy_for_dataset(train_dataset)
         mean_val_acc = get_accuracy_for_dataset(val_dataset)
-        # write_summary('accuracies/train_acc', mean_train_acc, train_step_fn.step)
         # write_summary('accuracies/val_acc', mean_val_acc, train_step_fn.step)
-        print('Step %s - Train Accuracy: %.2f - Val Accuracy: %.2f' % (str(train_step_fn.step).rjust(6, '0'), mean_train_acc, mean_val_acc))
+        print('Step %s - Val Accuracy: %.2f' % (str(train_step_fn.step).rjust(6, '0'), mean_val_acc))
 
       train_step_fn.step += 1
       return [total_loss, should_stop]
