@@ -14,11 +14,13 @@ def capsules_v0(inputs, num_classes, iterations, cfg, name='CapsuleEM-V0'):
   """Replicate the network in `Matrix Capsules with EM Routing.`
   """
 
+  num_begin_channels = 3 # RGB or imread(..., as_gray=True)
+
   with tf.variable_scope(name) as scope:
 
     # inputs [N, H, W, C] -> conv2d, 5x5, strides 2, channels 32 -> nets [N, OH, OW, 32]
     nets = _conv2d_wrapper(
-      inputs, shape=[1, 1, 3, cfg.A], strides=[1, 2, 2, 1], padding='SAME', add_bias=True, activation_fn=tf.nn.relu, name='conv1'
+      inputs, shape=[1, 1, num_begin_channels, cfg.A], strides=[1, 2, 2, 1], padding='SAME', add_bias=True, activation_fn=tf.nn.relu, name='conv1'
     )
     # inputs [N, H, W, C] -> conv2d, 1x1, strides 1, channels 32x(4x4+1) -> (poses, activations)
     nets = capsules_init(

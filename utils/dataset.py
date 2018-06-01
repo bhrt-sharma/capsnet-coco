@@ -2,6 +2,7 @@ import os
 import math
 import numpy as np
 import skimage.io as io
+import scipy
 
 
 class Dataset(object):
@@ -10,6 +11,7 @@ class Dataset(object):
                  batch_size=64, 
                  is_train=True, 
                  num=None,
+                 greyscale=False,
                  shuffle=True):
         self.folder_name = folder_name
         self.batch_size = batch_size
@@ -26,7 +28,7 @@ class Dataset(object):
         self.y = []
 
         for img_file in self.image_files:
-            img_arr = io.imread("{}/{}".format(folder_name, img_file))
+            img_arr = io.imread("{}/{}".format(folder_name, img_file), as_gray=greyscale)
 
             file_parts = img_file.split("_")
             instance_seen = int(file_parts[-1].replace(".jpg", ""))

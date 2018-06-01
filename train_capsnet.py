@@ -12,9 +12,12 @@ def main(_):
   tf.logging.set_verbosity(tf.logging.INFO)
   num_classes = 2
 
+  if cfg.greyscale:
+    print("\nUsing greyscale images.")
+
   print("\nGetting train data...")
   train_dataset = load_mscoco('train', cfg, return_dataset=True)
-  print("\nGetting val data...")
+  print("Getting val data...")
   val_dataset = load_mscoco('val', cfg, return_dataset=True)
 
   train_dataset.y = np.asarray([x if x != 62 else 0 for x in train_dataset.y])
