@@ -2,6 +2,7 @@ import os
 import math
 import numpy as np
 import skimage.io as io
+from scipy.ndimage import imread
 import scipy
 
 
@@ -28,7 +29,10 @@ class Dataset(object):
         self.y = []
 
         for img_file in self.image_files:
-            img_arr = io.imread("{}/{}".format(folder_name, img_file), as_gray=greyscale)
+            if not greyscale:
+                img_arr = io.imread("{}/{}".format(folder_name, img_file))
+            else:
+                img_arr = imread("{}/{}".format(folder_name, img_file), mode="L")[:,:,np.newaxis]
 
             file_parts = img_file.split("_")
             instance_seen = int(file_parts[-1].replace(".jpg", ""))

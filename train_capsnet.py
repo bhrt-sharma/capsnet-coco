@@ -23,6 +23,8 @@ def main(_):
   train_dataset.y = np.asarray([x if x != 62 else 0 for x in train_dataset.y])
   val_dataset.y = np.asarray([x if x != 62 else 0 for x in val_dataset.y])
 
+  print(train_dataset.X[0].shape)
+
   num_examples = train_dataset.X.shape[0]
   num_steps_per_epoch = int(num_examples / cfg.batch_size)
 
