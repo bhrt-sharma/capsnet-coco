@@ -95,6 +95,7 @@ def main(args):
                     feed_dict = {batch_x: batch[0].astype(np.float32), batch_labels: batch[1]}
                     _, loss_value, accuracy, summary_str, step_out = sess.run([opt_op, loss, acc, summary_op, global_step], feed_dict=feed_dict)
                     summary_writer.add_summary(summary_str, step_out)
+                print("Step: ", step_out)
                 print("Loss and accuracy: ", loss_value, accuracy)
                 train_dataset.reset()
 
