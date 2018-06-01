@@ -1,7 +1,7 @@
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
 from config import cfg
-from utils import load_mscoco, test_accuracy, one_hot_encode
+from utils import load_mscoco, test_accuracy, one_hot_encode, mnist
 import numpy as np
 import os
 from tqdm import tqdm
@@ -11,6 +11,10 @@ from models.capsules import nets
 def main(_):
   tf.logging.set_verbosity(tf.logging.INFO)
 
+  num_steps_per_epoch = int(
+    mnist.NUM_TRAIN_EXAMPLES / cfg.batch_size
+  )
+
   with tf.Graph().as_default():
     with tf.device('/cpu:0'):
       global_step = tf.train.get_or_create_global_step()
@@ -19,13 +23,12 @@ def main(_):
       data_directory='data/mnist', is_training=True, batch_size=cfg.batch_size
     )
 
-    poses, activations = nets.capsules_v0(images, num_classes=num_classes, iterations=cfg.iter_routing, cfg=cfg, name='capsulesEM-V0')
-      scope.reuse_variables()
+    poses, activations = nets.capsules_v0(images, num_classes=10, iterations=cfg.iter_routing, cfg=cfg, name='capsulesEM-V0')
 
-    train_accuracy = test_accuracy(activations, labels)
+    # train_accuracy = test_accuracy(activations, labels)
     # val_accuracy = test_accuracy(val_activations, val_labels)
 
-    tf.summary.scalar('accuracies/training_accuracy', train_accuracy)
+    # tf.summary.scalar('accuracies/training_accuracy', train_accuracy)
     # tf.summary.scalar('accuracies/val_accuracy', val_accuracy)
 
     # margin schedule
@@ -42,7 +45,7 @@ def main(_):
     )
 
     loss = nets.spread_loss(
-      LABELS, activations, margin=margin, name='spread_loss'
+      labels, activations, margin=margin, name='spread_loss'
     )
 
     # val_loss = nets.spread_loss(

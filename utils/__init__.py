@@ -4,7 +4,7 @@ import numpy as np
 import tensorflow as tf
 
 from config import cfg
-import mnist
+from . import mnist
 from .dataset import Dataset
 
 def load_mscoco(dataset_type, config, num=None, return_dataset=False):

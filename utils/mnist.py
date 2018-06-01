@@ -126,7 +126,7 @@ def load_mnist(
     _labels_filename = TESTS_LABELS
 
   # load images
-  _images_filepath = utils.download(
+  _images_filepath = mnist_utils.download(
     _images_filename, data_directory, DEFAULT_SOURCE_URL, overwrite=False
   )
 
@@ -137,7 +137,7 @@ def load_mnist(
     images = images.astype(np.float32) / 255.0 - 0.5
 
   # load labels
-  _labels_filepath = utils.download(
+  _labels_filepath = mnist_utils.download(
     _labels_filename, data_directory, DEFAULT_SOURCE_URL, overwrite=False
   )
 

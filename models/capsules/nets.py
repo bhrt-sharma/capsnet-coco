@@ -14,7 +14,7 @@ def capsules_v0(inputs, num_classes, iterations, cfg, name='CapsuleEM-V0'):
   """Replicate the network in `Matrix Capsules with EM Routing.`
   """
 
-  num_begin_channels = 3 # RGB or imread(..., as_gray=True)
+  num_begin_channels = 1 # RGB or imread(..., as_gray=True)
 
   with tf.variable_scope(name) as scope:
 
