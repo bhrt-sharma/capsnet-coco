@@ -58,7 +58,8 @@ def main(args):
                 learning_rate = learning_rate,
                 optimizer = opt,
                 # clip_gradients = False,
-                # learning_rate_decay_fn = _learning_rate_decay_fn)
+                # learning_rate_decay_fn = _learning_rate_decay_fn
+                )
 
     # set best checkpoint
     bestmodel_dir = os.path.join(cfg.logdir + '/cnn_baseline/{}'.format(experiment_name), 'best_checkpoint')
