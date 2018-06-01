@@ -10,63 +10,23 @@ from models.capsules import nets
 
 def main(_):
   tf.logging.set_verbosity(tf.logging.INFO)
-  num_classes = 2
-
-  if cfg.greyscale:
-    print("\nUsing greyscale images.")
-
-  print("\nGetting train data...")
-  train_dataset = load_mscoco('train', cfg, return_dataset=True)
-  print("Getting val data...")
-  val_dataset = load_mscoco('val', cfg, return_dataset=True)
-
-  train_dataset.y = np.asarray([x if x != 62 else 0 for x in train_dataset.y])
-  val_dataset.y = np.asarray([x if x != 62 else 0 for x in val_dataset.y])
-
-  num_examples = train_dataset.X.shape[0]
-  num_steps_per_epoch = int(num_examples / cfg.batch_size)
 
   with tf.Graph().as_default():
     with tf.device('/cpu:0'):
       global_step = tf.train.get_or_create_global_step()
 
-    sum_writer = tf.summary.FileWriter(cfg.logdir, graph=tf.Session().graph)
+    images, labels = mnist.inputs(
+      data_directory='data/mnist', is_training=True, batch_size=cfg.batch_size
+    )
 
-    images, labels = train_dataset.X.astype(np.float32), train_dataset.y
-    one_hot_labels = one_hot_encode(labels, num_classes)
-
-    val_images, val_labels = val_dataset.X.astype(np.float32), val_dataset.y
-    val_one_hot_labels = one_hot_encode(val_labels, num_classes)
-
-    # create batches for val and train
-    data_queues = tf.train.slice_input_producer([images, one_hot_labels, labels])
-    images, one_hot_labels, labels = tf.train.shuffle_batch(
-      data_queues,
-      num_threads=16,
-      batch_size=cfg.batch_size,
-      capacity=cfg.batch_size * 64,
-      min_after_dequeue=cfg.batch_size * 32,
-      allow_smaller_final_batch=False)
-
-    val_queues = tf.train.slice_input_producer([val_images, val_one_hot_labels, val_labels])
-    val_images, val_one_hot_labels, val_labels = tf.train.shuffle_batch(
-      val_queues,
-      num_threads=16,
-      batch_size=cfg.batch_size,
-      capacity=cfg.batch_size * 64,
-      min_after_dequeue=cfg.batch_size * 32,
-      allow_smaller_final_batch=False)
-
-    with tf.variable_scope("model") as scope:
-      poses, activations = nets.capsules_v0(images, num_classes=num_classes, iterations=cfg.iter_routing, cfg=cfg, name='capsulesEM-V0')
+    poses, activations = nets.capsules_v0(images, num_classes=num_classes, iterations=cfg.iter_routing, cfg=cfg, name='capsulesEM-V0')
       scope.reuse_variables()
-      _, val_activations = nets.capsules_v0(val_images, num_classes=num_classes, iterations=cfg.iter_routing, cfg=cfg, name='capsulesEM-V0')
 
     train_accuracy = test_accuracy(activations, labels)
-    val_accuracy = test_accuracy(val_activations, val_labels)
+    # val_accuracy = test_accuracy(val_activations, val_labels)
 
     tf.summary.scalar('accuracies/training_accuracy', train_accuracy)
-    tf.summary.scalar('accuracies/val_accuracy', val_accuracy)
+    # tf.summary.scalar('accuracies/val_accuracy', val_accuracy)
 
     # margin schedule
     # margin increase from 0.2 to 0.9 after margin_schedule_epoch_achieve_max
@@ -82,15 +42,15 @@ def main(_):
     )
 
     loss = nets.spread_loss(
-      one_hot_labels, activations, margin=margin, name='spread_loss'
+      LABELS, activations, margin=margin, name='spread_loss'
     )
 
-    val_loss = nets.spread_loss(
-      val_one_hot_labels, val_activations, margin=margin, name='val_spread_loss'
-    )
+    # val_loss = nets.spread_loss(
+    #   val_one_hot_labels, val_activations, margin=margin, name='val_spread_loss'
+    # )
 
     tf.summary.scalar('losses/spread_loss', loss)
-    tf.summary.scalar('losses/val_spread_loss', val_loss)
+    # tf.summary.scalar('losses/val_spread_loss', val_loss)
     
     # exponential learning rate decay
     learning_rate = tf.maximum(tf.train.exponential_decay(

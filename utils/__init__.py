@@ -4,8 +4,7 @@ import numpy as np
 import tensorflow as tf
 
 from config import cfg
-from keras.datasets import cifar10, cifar100
-from keras import backend as K
+import mnist
 from .dataset import Dataset
 
 def load_mscoco(dataset_type, config, num=None, return_dataset=False):
@@ -30,7 +29,6 @@ def test_accuracy(logits, labels):
     accuracy = tf.reduce_sum(tf.cast(correct_preds, tf.float32)) / cfg.batch_size
 
     return accuracy
-
 
 def one_hot_encode(labels, num_classes):
     num_labels = len(labels)
