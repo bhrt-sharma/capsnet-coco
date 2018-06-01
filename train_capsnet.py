@@ -90,12 +90,14 @@ def main(_):
     tf.summary.scalar('losses/val_spread_loss', val_loss)
     
     # exponential learning rate decay
-    learning_rate = tf.train.exponential_decay(
+    learning_rate = tf.maximum(tf.train.exponential_decay(
       cfg.initial_learning_rate,
       global_step,
-      decay_steps = num_steps_per_epoch,
+      decay_steps = 100,
       decay_rate = 0.8,
-      staircase = True)
+      staircase = True), 1e-8)
+
+    tf.summary.scalar('learning_rate/learning_rate', learning_rate)
 
     optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
 
@@ -103,7 +105,7 @@ def main(_):
       loss, optimizer, global_step=global_step, clip_gradient_norm=4.0
     )
 
-    print("\nTraining... Learning rate: %0.5f\n" % cfg.initial_learning_rate)
+    print("\nTraining... Learning rate: %0.9f\n" % cfg.initial_learning_rate)
 
     # def train_step_fn(session, *args, **kwargs):
     #   total_loss, should_stop = slim.learning.train_step(session, *args, **kwargs)
