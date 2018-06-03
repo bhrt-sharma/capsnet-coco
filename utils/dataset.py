@@ -174,7 +174,7 @@ def load_tless_split(config, num_classes=5):
 
 
 class TLessDataset(Dataset):
-    def __init__(self, files, num_classes=5, batch_size=50, greyscale=False, shuffle=True):
+    def __init__(self, files, num_classes=5, batch_size=50, greyscale=False, shuffle=True, mean_center_unit_var=False):
         self.batch_size = batch_size
         self.shuffle = shuffle
         self.current_idx = 0
@@ -200,9 +200,11 @@ class TLessDataset(Dataset):
                 if curr_id in self.image_files:
                     if not greyscale:
                         img_arr = io.imread("{}/{}".format(img_folder, img_file))
-                        img_arr[np.where((img_arr==[0,0,0]).all(axis=2))] = [220, 220, 220]
+                        # two colors to mask out 
+                        img_arr[np.where((img_arr<[30,30,50]).all(axis=2))] = [220, 220, 220]
                     else:
                         img_arr = imread("{}/{}".format(img_folder, img_file), mode="L")[:,:,np.newaxis]
+                        img_arr[np.where((img_arr<=[50]))] = [220]
                     img_arr = self._crop_and_shrink_image(img_arr)
                     self.X.append(img_arr)
                     self.y.append(int(class_folder))
@@ -212,7 +214,7 @@ class TLessDataset(Dataset):
 
         self.setup()
 
-    def _crop_and_shrink_image(self, im, crop_width=200, crop_height=200, new_width=48, new_height=48):
+    def _crop_and_shrink_image(self, im, crop_width=100, crop_height=100, new_width=48, new_height=48):
         width, height = im.shape[0], im.shape[1]  # Get dimensions
 
         left = (width - crop_width)//2
