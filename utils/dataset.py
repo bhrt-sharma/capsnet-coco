@@ -207,15 +207,18 @@ class TLessDataset(Dataset):
                     self.X.append(img_arr)
                     self.y.append(int(class_folder))
 
+        self.X = np.asarray(self.X)
+        self.y = np.asarray(self.y)
+
         self.setup()
 
     def _crop_and_shrink_image(self, im, crop_width=200, crop_height=200, new_width=64, new_height=64):
         width, height = im.shape[0], im.shape[1]  # Get dimensions
 
-        left = (width - crop_width)/2
-        top = (height - crop_height)/2
-        right = (width + crop_width)/2
-        bottom = (height + crop_height)/2
+        left = (width - crop_width)//2
+        top = (height - crop_height)//2
+        right = (width + crop_width)//2
+        bottom = (height + crop_height)//2
 
         cropped = im[top:bottom, left:right, :]
 
