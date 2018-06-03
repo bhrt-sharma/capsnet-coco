@@ -4,6 +4,7 @@ import numpy as np
 import skimage.io as io
 from skimage.transform import resize
 from scipy.ndimage import imread
+import json
 import scipy
 
 
@@ -120,30 +121,50 @@ to be in the train set.
 3. Take 260/2 = 130 to be in the val and test splits, respectively. 
 """
 def load_tless_split(config, num_classes=5):
-    train_proportion = 0.8
-    val_proportion = 0.1
-    test_proportion = 0.1
+    split_file = 'data/t-less_train_test_val_split.json'
+    if os.path.isfile(split_file):
+        with open(split_file, 'r') as f:
+            split_dict = json.load(f)
+            train_image_ids = split_dict['train']
+            val_image_ids = split_dict['val']
+            test_image_ids = split_dict['test']
+    else:
+        train_proportion = 0.8
+        val_proportion = 0.1
+        test_proportion = 0.1
+        num_images_per_item = 1296
+        num_train_images = int(train_proportion * num_images_per_item)
+        
+        image_ids_per_class = np.arange(0, 1297)
+        np.random.shuffle(image_ids_per_class)
 
-    num_images_per_item = 1296
-    num_train_images = int(train_proportion * num_images_per_item)
+        train_image_ids = image_ids_per_class[:num_train_images]
+        non_train_image_ids = image_ids_per_class[num_train_images : ]
+        val_image_ids = non_train_image_ids[ : len(non_train_image_ids)//2]
+        test_image_ids = non_train_image_ids[len(non_train_image_ids)//2 : ]
 
-    image_ids_per_class = np.arange(0, 1297)
-    np.random.shuffle(image_ids_per_class)
-    non_train_image_ids = image_ids_per_class[num_train_images : ]
+        with open(split_file, 'w+') as f:
+            split_dict = {
+                'train': train_image_ids.tolist(),
+                'val': val_image_ids.tolist(),
+                'test': test_image_ids.tolist()
+            }
+            json.dump(split_dict, f)
+
     train_set = TLessDataset(
-        image_ids_per_class[:num_train_images], 
+        train_image_ids, 
         num_classes=num_classes,
         batch_size=config.batch_size, 
         greyscale=config.greyscale
     )
     val_set = TLessDataset(
-        non_train_image_ids[ : len(non_train_image_ids)//2], 
+        val_image_ids, 
         num_classes=num_classes,
         batch_size=config.batch_size, 
         greyscale=config.greyscale
     )
     test_set = TLessDataset(
-        non_train_image_ids[len(non_train_image_ids)//2 : ], 
+        test_image_ids, 
         num_classes=num_classes,
         batch_size=config.batch_size, 
         greyscale=config.greyscale
