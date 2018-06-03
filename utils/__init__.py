@@ -4,7 +4,7 @@ import numpy as np
 import tensorflow as tf
 
 from config import cfg
-from .dataset import Dataset
+from .dataset import Dataset, TLessDataset
 from .dataset import load_mscoco, load_tless_split
 
 
