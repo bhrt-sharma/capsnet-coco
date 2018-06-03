@@ -1,17 +1,3 @@
-# Download 
-
-To download all of the MSCOCO datasets (i.e., train, val, and test), simply run `sh download_dataset.sh`. 
-
-This will, in order:
-
-1. Run the python script to download CoCo images (download zip files, unzip them into right directories).
-2. Remove the zip files. 
-3. Download the train / val captions, unzip them, move them to the right directories, and remove the unzipped folder. 
-4. Download the test captions, unzip them, move to the right directory, and remove the unzipped folder. 
-5. Remove all zip files for space purposes. 
-
-See the flags within `data/download_coco.py` for further details if you want to redownload one specific dataset. 
-
 # Setup
 
 It seems that the image provided does not have the Python Imaging Library installed. It does, however, have Anaconda installed. Make sure that you have followed the instructions on the tutorial and 
@@ -26,7 +12,29 @@ Then, we need to build the pycoco tools first. Navigate to data/cocoapi/pycoco a
 
 `rm -rf build`
 
-# Preprocessing (Masking)
+# Download 
+
+## MSCOCO
+
+To download all of the MSCOCO datasets (i.e., train, val, and test), simply run `sh download_mscoco.sh`. 
+
+This will, in order:
+
+1. Run the python script to download CoCo images (download zip files, unzip them into right directories).
+2. Remove the zip files. 
+3. Download the train / val captions, unzip them, move them to the right directories, and remove the unzipped folder. 
+4. Download the test captions, unzip them, move to the right directory, and remove the unzipped folder. 
+5. Remove all zip files for space purposes. 
+
+See the flags within `data/download_coco.py` for further details if you want to redownload one specific dataset. 
+
+## t-less
+
+Similarly:
+
+`sh download_tless.sh`
+
+# Preprocessing (Masking) MSCOCO
 
 To obtain the ground truth masks, simply:
 
@@ -41,18 +49,6 @@ Images are named something like: "COCO_train2014_000000057870.jpg". The number a
 Finally, run 
 
 `python scripts/create_train_val_test_set.py` 
-
-# Training 
-
-Load images by instantiating a Dataset object. 
-
-```
-from dataset import Dataset
-trainset = Dataset("data/train/images/final")
-# trainset.X has the RGB image arrays 
-# trainset.y has the category ids
-```
-
 
 # Acknowledgements
 
