@@ -118,7 +118,7 @@ Takes care of train/val/test split with the following algorithm:
 to be in the train set. 
 3. Take 260/2 = 130 to be in the val and test splits, respectively. 
 """
-def load_tless_split(config):
+def load_tless_split(config, num_classes=5):
     train_proportion = 0.8
     val_proportion = 0.1
     test_proportion = 0.1
@@ -132,16 +132,19 @@ def load_tless_split(config):
 
     train_set = TLessDataset(
         image_ids_per_class[:num_train_images], 
+        num_classes=num_classes,
         batch_size=config.batch_size, 
         greyscale=config.greyscale
     )
     val_set = TLessDataset(
         non_train_image_ids[ : len(non_train_image_ids)//2], 
+        num_classes=num_classes,
         batch_size=config.batch_size, 
         greyscale=config.greyscale
     )
     test_set = TLessDataset(
         non_train_image_ids[len(non_train_image_ids)//2 : ], 
+        num_classes=num_classes,
         batch_size=config.batch_size, 
         greyscale=config.greyscale
     )
@@ -150,22 +153,23 @@ def load_tless_split(config):
 
 
 class TLessDataset(Dataset):
-    def __init__(self, files, batch_size=64, greyscale=False, shuffle=True):
+    def __init__(self, files, num_classes=5, batch_size=64, greyscale=False, shuffle=True):
         self.batch_size = batch_size
         self.shuffle = shuffle
         self.current_idx = 0
-
         self.image_files = files
 
         all_image_folder = 'data/t-less/t-less_v2/train_primesense/'
         class_folders = os.listdir(all_image_folder)
 
-        self.num_classes = len(class_folders)
-
         self.X = []
         self.y = []
+        self.included_class_folders = []
 
-        for class_folder in class_folders:
+        for class_num in range(num_classes):
+            class_folder = class_folders[class_num]
+            self.included_class_folders.append(class_folder)
+            
             img_folder = all_image_folder + class_folder + '/rgb/'
 
             class_images = os.listdir(img_folder)
