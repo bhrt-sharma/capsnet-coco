@@ -174,7 +174,7 @@ def load_tless_split(config, num_classes=5):
 
 
 class TLessDataset(Dataset):
-    def __init__(self, files, num_classes=5, batch_size=64, greyscale=False, shuffle=True):
+    def __init__(self, files, num_classes=5, batch_size=50, greyscale=False, shuffle=True):
         self.batch_size = batch_size
         self.shuffle = shuffle
         self.current_idx = 0
@@ -212,7 +212,7 @@ class TLessDataset(Dataset):
 
         self.setup()
 
-    def _crop_and_shrink_image(self, im, crop_width=200, crop_height=200, new_width=64, new_height=64):
+    def _crop_and_shrink_image(self, im, crop_width=200, crop_height=200, new_width=48, new_height=48):
         width, height = im.shape[0], im.shape[1]  # Get dimensions
 
         left = (width - crop_width)//2
