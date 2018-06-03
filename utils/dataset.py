@@ -2,6 +2,7 @@ import os
 import math
 import numpy as np
 import skimage.io as io
+from skimage.transform import resize
 from scipy.ndimage import imread
 import scipy
 
@@ -129,7 +130,6 @@ def load_tless_split(config, num_classes=5):
     image_ids_per_class = np.arange(0, 1297)
     np.random.shuffle(image_ids_per_class)
     non_train_image_ids = image_ids_per_class[num_train_images : ]
-
     train_set = TLessDataset(
         image_ids_per_class[:num_train_images], 
         num_classes=num_classes,
@@ -158,6 +158,7 @@ class TLessDataset(Dataset):
         self.shuffle = shuffle
         self.current_idx = 0
         self.image_files = files
+        self.greyscale = greyscale
 
         all_image_folder = 'data/t-less/t-less_v2/train_primesense/'
         class_folders = os.listdir(all_image_folder)
@@ -169,7 +170,7 @@ class TLessDataset(Dataset):
         for class_num in range(num_classes):
             class_folder = class_folders[class_num]
             self.included_class_folders.append(class_folder)
-            
+
             img_folder = all_image_folder + class_folder + '/rgb/'
 
             class_images = os.listdir(img_folder)
@@ -181,7 +182,26 @@ class TLessDataset(Dataset):
                     else:
                         img_arr = imread("{}/{}".format(img_folder, img_file), mode="L")[:,:,np.newaxis]
 
+                    img_arr = self._crop_and_shrink_image(img_arr)
                     self.X.append(img_arr)
                     self.y.append(int(class_folder))
 
         self.setup()
+
+    def _crop_and_shrink_image(self, im, crop_width=200, crop_height=200, new_width=64, new_height=64):
+        width, height = im.shape[0], im.shape[1]  # Get dimensions
+
+        left = (width - crop_width)/2
+        top = (height - crop_height)/2
+        right = (width + crop_width)/2
+        bottom = (height + crop_height)/2
+
+        cropped = im[top:bottom, left:right, :]
+
+        resized = resize(im, (new_width, new_height))
+        rescaled_image = 255 * resized
+        final_image = rescaled_image.astype(np.uint8) # Convert to integer data type pixels.
+    
+        return final_image
+
+    
