@@ -61,9 +61,11 @@ def main(_):
       allow_smaller_final_batch=False)
 
     with tf.variable_scope("model") as scope:
-      poses, activations = nets.capsules_v0(images, num_classes=num_classes, iterations=cfg.iter_routing, cfg=cfg, name='capsulesEM-V0')
+      batch_norm_images = slim.batch_norm(images, center=True, is_training=True, trainable=True)
+      batch_norm_val_images = slim.batch_norm(val_images, center=True, is_training=True, trainable=True)
+      poses, activations = nets.capsules_v0(batch_norm_images, num_classes=num_classes, iterations=cfg.iter_routing, cfg=cfg, name='capsulesEM-V0')
       scope.reuse_variables()
-      _, val_activations = nets.capsules_v0(val_images, num_classes=num_classes, iterations=cfg.iter_routing, cfg=cfg, name='capsulesEM-V0')
+      _, val_activations = nets.capsules_v0(batch_norm_val_images, num_classes=num_classes, iterations=cfg.iter_routing, cfg=cfg, name='capsulesEM-V0')
 
     train_accuracy = test_accuracy(activations, labels)
     val_accuracy = test_accuracy(val_activations, val_labels)
@@ -77,7 +79,7 @@ def main(_):
     margin = tf.train.piecewise_constant(
       tf.cast(global_step, dtype=tf.int32),
       boundaries=[
-        int(num_steps_per_epoch * margin_schedule_epoch_achieve_max * x / 7) for x in range(1, 8)
+       int(num_steps_per_epoch * margin_schedule_epoch_achieve_max * x / 7) for x in range(1, 8)
       ],
       values=[
         x / 10.0 for x in range(2, 10)
