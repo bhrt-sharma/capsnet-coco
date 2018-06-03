@@ -1,28 +1,6 @@
-All right boys let's do this.
-
-# TODO
-
-## Preprocessing
-
-1. ~Modify `getGroundTruthMasks` in coco.py to also return non-polygon segments~
-2. ~Add neutral grey background (instead of the black background? Not sure if this should theoretically make any difference).~
-3. ~Figure out a detexturizing algorithm – either reduce contrast or add a small amount of gaussian blur.~
-
-## Training and such
-
-~The images are too large as they stand, so in order to make this tractable we should probably downsample to 64x64 or 128x128.~
-
-0. Modify Dataset depending on how you guys want to load batches.
-1. Baseline: train a resnet model on the raw data, test on raw data. 
-2. Baseline on masked: train a resnet model on the masked images, test on masked images.
-3. Baseline on masked, detexturized: train a resnet model on the detexturized, masked images, test on detexturized, masked images.
-4. Capsnet: train a capsnet model on the raw data, test on raw data. 
-5. Capsnet on masked: train a capsnet model on the masked images, test on masked images.
-6. Baseline on masked, detexturized: train a capsnet model on the detexturized, masked images, test on detexturized, masked images.
-
 # Download 
 
-To download all of the datasets (i.e., train, val, and test), simply run `sh download_dataset.sh`. 
+To download all of the MSCOCO datasets (i.e., train, val, and test), simply run `sh download_dataset.sh`. 
 
 This will, in order:
 
