@@ -167,6 +167,7 @@ def load_tless_split(config, num_classes=5):
         test_image_ids, 
         num_classes=num_classes,
         batch_size=config.batch_size, 
+        is_train=False,
         greyscale=config.greyscale
     )
 
@@ -174,8 +175,9 @@ def load_tless_split(config, num_classes=5):
 
 
 class TLessDataset(Dataset):
-    def __init__(self, files, num_classes=5, batch_size=50, greyscale=False, shuffle=True, mean_center_unit_var=False):
+    def __init__(self, files, num_classes=5, batch_size=50, is_train=True, greyscale=False, shuffle=True, mean_center_unit_var=False):
         self.batch_size = batch_size
+        self.is_train = is_train
         self.shuffle = shuffle
         self.current_idx = 0
         self.image_files = files
