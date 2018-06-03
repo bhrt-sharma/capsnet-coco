@@ -44,6 +44,7 @@ def main(_):
     num_channels = 3
   batch_x = tf.placeholder(tf.float32, shape=(cfg.batch_size, D, D, num_channels), name="input")
   batch_labels = tf.placeholder(tf.int32, shape=(cfg.batch_size), name="labels")
+  one_hot_labels = one_hot_encode(batch_labels, num_classes=num_classes)
   batch_x_norm = slim.batch_norm(batch_x, center=False, is_training=True, trainable=True)
   
   poses, activations = nets.capsules_v0(batch_x_norm, is_train=True, num_classes=num_classes)
