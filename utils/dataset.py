@@ -224,7 +224,7 @@ class TLessDataset(Dataset):
 
         cropped = im[top:bottom, left:right, :]
 
-        resized = resize(im, (new_width, new_height))
+        resized = resize(cropped, (new_width, new_height))
         rescaled_image = 255 * resized
         final_image = rescaled_image.astype(np.uint8) # Convert to integer data type pixels.
     
