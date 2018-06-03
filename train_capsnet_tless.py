@@ -16,158 +16,146 @@ def main(_):
   if cfg.greyscale:
     print("\nUsing greyscale images.")
 
+  experiment_name = args[1]
+  """ GET DATA """
   print("\nGetting train, val, and test data...")
-  train_dataset, val_dataset, test_dataset = load_tless_split(cfg, num_classes)
 
-
+  train_dataset, val_dataset, _ = load_tless_split(cfg, num_classes=num_classes)
   # squash labels like so: turn original labels of [1, 55, 33, 33, 1, 33, 55] into [0, 2, 1, 1, 0, 1, 2]
   _, train_dataset.y = np.unique(np.asarray(train_dataset.y), return_inverse=True)
   _, val_dataset.y = np.unique(np.asarray(val_dataset.y), return_inverse=True)
 
-  print(train_dataset.X[0].shape)
 
-  num_examples = train_dataset.X.shape[0]
-  num_steps_per_epoch = int(num_examples / cfg.batch_size)
+  checkpoints_to_keep = 1
+  N, D = train_dataset.X.shape[0], train_dataset.X.shape[1]
+  print("\nNum classes", num_classes)
+  num_batches_per_epoch = int(N / cfg.batch_size)
 
-  with tf.Graph().as_default():
-    with tf.device('/cpu:0'):
-      global_step = tf.train.get_or_create_global_step()
+  """ SET UP INITIAL VARIABLES"""
+  learning_rate = tf.constant(cfg.initial_learning_rate)
+  opt = tf.train.AdamOptimizer(cfg.initial_learning_rate)
+  global_step = tf.Variable(0, name='global_step', trainable=False)
+  tf.summary.scalar('learning_rate', learning_rate)
 
-    sum_writer = tf.summary.FileWriter(cfg.logdir, graph=tf.Session().graph)
+  """ DEFINE DATA FLOW """
+  if cfg.greyscale:
+    num_channels = 1
+  else:
+    num_channels = 3
+  batch_x = tf.placeholder(tf.float32, shape=(cfg.batch_size, D, D, num_channels), name="input")
+  batch_labels = tf.placeholder(tf.int32, shape=(cfg.batch_size), name="labels")
+  batch_x_norm = slim.batch_norm(batch_x, center=False, is_training=True, trainable=True)
+  
+  poses, activations = nets.capsules_v0(batch_x_norm, is_train=True, num_classes=num_classes)
 
-    images, labels = train_dataset.X.astype(np.float32), train_dataset.y
-    one_hot_labels = one_hot_encode(labels, num_classes)
+  # margin schedule
+  # margin increase from 0.2 to 0.9 after margin_schedule_epoch_achieve_max
+  margin_schedule_epoch_achieve_max = 10.0
+  margin = tf.train.piecewise_constant(
+    tf.cast(global_step, dtype=tf.int32),
+    boundaries=[
+     int(num_steps_per_epoch * margin_schedule_epoch_achieve_max * x / 7) for x in range(1, 8)
+    ],
+    values=[
+      x / 10.0 for x in range(2, 10)
+    ]
+  )
+  
+  loss = nets.spread_loss(
+    one_hot_labels, activations, margin=margin, name='spread_loss'
+  )
 
-    val_images, val_labels = val_dataset.X.astype(np.float32), val_dataset.y
-    val_one_hot_labels = one_hot_encode(val_labels, num_classes)
+  acc = test_accuracy(output, batch_labels)
+  
+  tf.summary.scalar('train_acc', acc)
+  tf.summary.scalar('spread_loss', loss)
 
-    # create batches for val and train
-    data_queues = tf.train.slice_input_producer([images, one_hot_labels, labels])
-    images, one_hot_labels, labels = tf.train.shuffle_batch(
-      data_queues,
-      num_threads=16,
-      batch_size=cfg.batch_size,
-      capacity=cfg.batch_size * 64,
-      min_after_dequeue=cfg.batch_size * 32,
-      allow_smaller_final_batch=False)
+  """Compute gradient."""
+  def _learning_rate_decay_fn(learning_rate, global_step):
+      return tf.train.exponential_decay(
+                      learning_rate,
+                      global_step,
+                      decay_steps = num_batches_per_epoch,
+                      decay_rate = 0.9,
+                      staircase = True)
 
-    val_queues = tf.train.slice_input_producer([val_images, val_one_hot_labels, val_labels])
-    val_images, val_one_hot_labels, val_labels = tf.train.shuffle_batch(
-      val_queues,
-      num_threads=16,
-      batch_size=cfg.batch_size,
-      capacity=cfg.batch_size * 64,
-      min_after_dequeue=cfg.batch_size * 32,
-      allow_smaller_final_batch=False)
+  opt_op = tf.contrib.layers.optimize_loss(
+    loss = loss,
+    global_step = global_step,
+    learning_rate = learning_rate,
+    optimizer = opt,
+    # clip_gradients = False,
+    learning_rate_decay_fn = _learning_rate_decay_fn
+  )
 
-    with tf.variable_scope("model") as scope:
-      batch_norm_images = slim.batch_norm(images, center=True, is_training=True, trainable=True)
-      batch_norm_val_images = slim.batch_norm(val_images, center=True, is_training=True, trainable=True)
-      poses, activations = nets.capsules_v0(batch_norm_images, num_classes=num_classes, iterations=cfg.iter_routing, cfg=cfg, name='capsulesEM-V0')
-      scope.reuse_variables()
-      _, val_activations = nets.capsules_v0(batch_norm_val_images, num_classes=num_classes, iterations=cfg.iter_routing, cfg=cfg, name='capsulesEM-V0')
+  # set best checkpoint
+  bestmodel_dir = os.path.join(cfg.logdir + '/capsnet/{}'.format(experiment_name), 'best_checkpoint')
+  if not os.path.exists(bestmodel_dir):
+      os.makedirs(bestmodel_dir)
+  bestmodel_ckpt_path = os.path.join(bestmodel_dir, "capsnet_best.ckpt")
+  train_saver = tf.train.Saver(tf.global_variables(), max_to_keep = checkpoints_to_keep)
+  bestmodel_saver = tf.train.Saver(tf.global_variables(), max_to_keep = checkpoints_to_keep)
+  summary_op = tf.summary.merge_all()
 
-    train_accuracy = test_accuracy(activations, labels)
-    val_accuracy = test_accuracy(val_activations, val_labels)
+  """ RUN GRAPH """
+  with tf.Session() as sess:
+      if cfg.phase == 'train':
+          sess.run(tf.local_variables_initializer())
+          sess.run(tf.global_variables_initializer())
+          tf.get_default_graph().finalize()
 
-    tf.summary.scalar('accuracies/training_accuracy', train_accuracy)
-    tf.summary.scalar('accuracies/val_accuracy', val_accuracy)
+          """Set summary writers"""
+          if not os.path.exists(cfg.logdir + '/capsnet/{}/train_log/'.format(experiment_name)):
+              os.makedirs(cfg.logdir + '/capsnet/{}/train_log/'.format(experiment_name))
+          summary_writer = tf.summary.FileWriter(
+              cfg.logdir + '/capsnet/{}/train_log/'.format(experiment_name), graph=sess.graph)
 
-    # margin schedule
-    # margin increase from 0.2 to 0.9 after margin_schedule_epoch_achieve_max
-    margin_schedule_epoch_achieve_max = 10.0
-    margin = tf.train.piecewise_constant(
-      tf.cast(global_step, dtype=tf.int32),
-      boundaries=[
-       int(num_steps_per_epoch * margin_schedule_epoch_achieve_max * x / 7) for x in range(1, 8)
-      ],
-      values=[
-        x / 10.0 for x in range(2, 10)
-      ]
-    )
+          """Main loop"""
+          best_loss = None
+          best_acc = None 
+          for e in list(range(cfg.num_epochs)):
+              for b in list(range(num_batches_per_epoch)):
+                  batch = train_dataset.next_batch()
+                  feed_dict = {batch_x: batch[0].astype(np.float32), batch_labels: batch[1]}
+                  _, loss_value, accuracy, summary_str, step_out = sess.run([opt_op, loss, acc, summary_op, global_step], feed_dict=feed_dict)
+                  summary_writer.add_summary(summary_str, step_out)
+              print("Step: ", step_out)
+              print("Loss and accuracy: ", loss_value, accuracy)
+              train_dataset.reset()
 
-    loss = nets.spread_loss(
-      one_hot_labels, activations, margin=margin, name='spread_loss'
-    )
+              #save model after every epoch 
+              print('saving model now :)')
+              train_ckpt_path = os.path.join(
+                  cfg.logdir + '/capsnet/{}'.format(experiment_name), 'model-{:.4f}.ckpt'.format(loss_value))
+              train_saver.save(sess, train_ckpt_path, global_step=step_out)
 
-    val_loss = nets.spread_loss(
-      val_one_hot_labels, val_activations, margin=margin, name='val_spread_loss'
-    )
+              # eval on validation loss 
+              loss_per_val_batch = 0.0
+              acc_per_val_batch = 0.0
+              num_val_batches = 0
+              while val_dataset.has_next_batch():
+                  val_batch = val_dataset.next_batch()
+                  feed_dict = {batch_x: val_batch[0].astype(np.float32), batch_labels: val_batch[1]}
+                  dev_loss, dev_acc, summary_str, step_out = sess.run([loss, acc, summary_op, global_step], feed_dict=feed_dict)
+                  loss_per_val_batch += loss_value
+                  acc_per_val_batch += dev_acc
+                  num_val_batches +=1 
+              avg_val_loss = loss_per_val_batch / num_val_batches
+              avg_val_acc = acc_per_val_batch / num_val_batches
+              write_summary(avg_val_loss, "dev/avg_validation_loss", summary_writer, step_out)
+              write_summary(avg_val_acc, "dev/avg_validation_acc", summary_writer, step_out)
 
-    tf.summary.scalar('losses/spread_loss', loss)
-    tf.summary.scalar('losses/val_spread_loss', val_loss)
-    
-    # exponential learning rate decay
-    learning_rate = tf.maximum(tf.train.exponential_decay(
-      cfg.initial_learning_rate,
-      global_step,
-      decay_steps = 500,
-      decay_rate = 0.8,
-      staircase = True), 1e-10)
+              if best_acc is None or avg_val_acc > best_acc:
+                  print('saving best model!', 'avg_val_acc is: ', avg_val_acc, 'previous best acc is: ', best_acc)
+                  bestmodel_saver.save(sess, bestmodel_ckpt_path, global_step=step_out)
+                  best_acc = avg_val_acc
+              val_dataset.reset()
 
-    tf.summary.scalar('learning_rate/learning_rate', learning_rate)
-
-    optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
-
-    train_tensor = slim.learning.create_train_op(
-      loss, optimizer, global_step=global_step, clip_gradient_norm=4.0
-    )
-
-    print("\nTraining... Learning rate: %0.9f\n" % cfg.initial_learning_rate)
-
-    # def train_step_fn(session, *args, **kwargs):
-    #   total_loss, should_stop = slim.learning.train_step(session, *args, **kwargs)
-
-    #   def get_accuracy_for_dataset(dset):
-    #     num_batches_in_train = 0
-    #     mean_acc = 0.0
-    #     while dset.has_next_batch():
-    #       num_batches_in_train += 1
-    #       curr_X, curr_labels = dset.next_batch()
-    #       curr_X = curr_X.astype(np.float32)
-    #       curr_train_acc = session.run(train_accuracy, feed_dict={images: curr_X, labels: curr_labels})
-    #       mean_acc += curr_train_acc
-    #     mean_acc = mean_acc / num_batches_in_train
-    #     dset.reset()
-    #     return mean_acc
-
-    #   def write_summary(tag, value, step_out):
-    #     summary = tf.Summary()
-    #     summary.value.add(tag=tag, simple_value=value)
-    #     sum_writer.add_summary(summary, step_out)
-
-    #   if (train_step_fn.step % 100 == 0):
-    #     print("Getting train/val accuracy... ")
-    #     mean_val_acc = get_accuracy_for_dataset(val_dataset)
-    #     # write_summary('accuracies/val_acc', mean_val_acc, train_step_fn.step)
-    #     print('Step %s - Val Accuracy: %.2f' % (str(train_step_fn.step).rjust(6, '0'), mean_val_acc))
-
-    #   train_step_fn.step += 1
-    #   return [total_loss, should_stop]
-
-    # train_step_fn.step = 0
-
-    slim.learning.train(
-      train_tensor,
-      logdir=cfg.logdir,
-      log_every_n_steps=10,
-      save_summaries_secs=60,
-      saver=tf.train.Saver(max_to_keep=100),
-      save_interval_secs=600,
-      # yg: add session_config to limit gpu usage and allow growth
-      session_config=tf.ConfigProto(
-        # device_count = {
-        #   'GPU': 0
-        # },
-        gpu_options={
-          'allow_growth': 0,
-          # 'per_process_gpu_memory_fraction': 0.01
-          'visible_device_list': '0'
-        },
-        allow_soft_placement=True,
-        log_device_placement=False,
-      )
-    )
+def write_summary(value, tag, summary_writer, global_step):
+    """Write a single summary value to tensorboard"""
+    summary = tf.Summary()
+    summary.value.add(tag=tag, simple_value=value)
+    summary_writer.add_summary(summary, global_step)
 
 if __name__ == "__main__":
   tf.app.run()
