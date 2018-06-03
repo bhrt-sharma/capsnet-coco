@@ -200,9 +200,9 @@ class TLessDataset(Dataset):
                 if curr_id in self.image_files:
                     if not greyscale:
                         img_arr = io.imread("{}/{}".format(img_folder, img_file))
+                        img_arr[np.where((img_arr==[0,0,0]).all(axis=2))] = [220, 220, 220]
                     else:
                         img_arr = imread("{}/{}".format(img_folder, img_file), mode="L")[:,:,np.newaxis]
-
                     img_arr = self._crop_and_shrink_image(img_arr)
                     self.X.append(img_arr)
                     self.y.append(int(class_folder))
