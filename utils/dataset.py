@@ -66,7 +66,7 @@ class Dataset(object):
 
     def setup(self):
         """ Setup the dataset. """
-        self.count = len(self.image_files)
+        self.count = self.X.shape[0]
         self.num_batches = int(np.ceil(self.count * 1.0 / self.batch_size))
         self.fake_count = self.num_batches * self.batch_size - self.count
         self.idxs = list(range(self.count))
