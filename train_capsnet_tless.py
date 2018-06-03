@@ -9,7 +9,7 @@ from models.capsules import nets
 from utils import load_tless_split
 
 
-def main(_):
+def main(args):
   tf.logging.set_verbosity(tf.logging.INFO)
   num_classes = 2
 
@@ -44,10 +44,10 @@ def main(_):
     num_channels = 3
   batch_x = tf.placeholder(tf.float32, shape=(cfg.batch_size, D, D, num_channels), name="input")
   batch_labels = tf.placeholder(tf.int32, shape=(cfg.batch_size), name="labels")
-  one_hot_labels = one_hot_encode(batch_labels, num_classes=num_classes)
+  one_hot_labels = tf.one_hot(batch_labels, num_classes)
   batch_x_norm = slim.batch_norm(batch_x, center=False, is_training=True, trainable=True)
   
-  poses, activations = nets.capsules_v0(batch_x_norm, is_train=True, num_classes=num_classes)
+  poses, activations = nets.capsules_v0(batch_x_norm, num_classes=num_classes, iterations=cfg.iter_routing, cfg=cfg, name='capsulesEM-V0')
 
   # margin schedule
   # margin increase from 0.2 to 0.9 after margin_schedule_epoch_achieve_max
@@ -55,7 +55,7 @@ def main(_):
   margin = tf.train.piecewise_constant(
     tf.cast(global_step, dtype=tf.int32),
     boundaries=[
-     int(num_steps_per_epoch * margin_schedule_epoch_achieve_max * x / 7) for x in range(1, 8)
+     int(num_batches_per_epoch * margin_schedule_epoch_achieve_max * x / 7) for x in range(1, 8)
     ],
     values=[
       x / 10.0 for x in range(2, 10)
@@ -66,10 +66,10 @@ def main(_):
     one_hot_labels, activations, margin=margin, name='spread_loss'
   )
 
-  acc = test_accuracy(output, batch_labels)
+  acc = test_accuracy(activations, batch_labels)
   
   tf.summary.scalar('train_acc', acc)
-  tf.summary.scalar('spread_loss', loss)
+  # tf.summary.scalar('spread_loss', loss)
 
   """Compute gradient."""
   def _learning_rate_decay_fn(learning_rate, global_step):
@@ -114,6 +114,7 @@ def main(_):
           """Main loop"""
           best_loss = None
           best_acc = None 
+          print("Num epochs: ", cfg.num_epochs, " Num batches per epoch: ", num_batches_per_epoch)
           for e in list(range(cfg.num_epochs)):
               for b in list(range(num_batches_per_epoch)):
                   batch = train_dataset.next_batch()
