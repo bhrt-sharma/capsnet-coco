@@ -99,9 +99,9 @@ def main(_):
     learning_rate = tf.maximum(tf.train.exponential_decay(
       cfg.initial_learning_rate,
       global_step,
-      decay_steps = 100,
+      decay_steps = 500,
       decay_rate = 0.8,
-      staircase = True), 1e-8)
+      staircase = True), 1e-10)
 
     tf.summary.scalar('learning_rate/learning_rate', learning_rate)
 
