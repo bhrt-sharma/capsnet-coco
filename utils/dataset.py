@@ -184,7 +184,7 @@ class TLessDataset(Dataset):
         self.greyscale = greyscale
 
         all_image_folder = 'data/t-less/t-less_v2/train_primesense/'
-        class_folders = os.listdir(all_image_folder)
+        class_folders = os.listdir(all_image_folder)[::-1]
 
         self.X = []
         self.y = []
