@@ -15,7 +15,7 @@ flags.DEFINE_float('initial_learning_rate', 1e-5, '\lambda in the activation fun
 
 flags.DEFINE_integer('batch_size', 30, 'batch size')
 flags.DEFINE_integer('num_epochs', 50, 'number of epochs')
-flags.DEFINE_integer('iter_routing', 2, 'number of iterations')
+flags.DEFINE_integer('iter_routing', 3, 'number of iterations')
 flags.DEFINE_float('m_schedule', 0.2, 'the m will get to 0.9 at current epoch')
 flags.DEFINE_float('epsilon', 1e-9, 'epsilon')
 flags.DEFINE_float('m_plus', 0.9, 'the parameter of m plus')
@@ -26,7 +26,7 @@ flags.DEFINE_string('norm', 'norm2', 'norm type')
 ################################
 #    structure parameters      #
 ################################
-flags.DEFINE_integer('A', 32, 'number of channels in output from ReLU Conv1')
+flags.DEFINE_integer('A', 64, 'number of channels in output from ReLU Conv1')
 flags.DEFINE_integer('B', 8, 'number of capsules in output from PrimaryCaps')
 flags.DEFINE_integer('C', 16, 'number of channels in output from ConvCaps1')
 flags.DEFINE_integer('D', 16, 'number of channels in output from ConvCaps2')
