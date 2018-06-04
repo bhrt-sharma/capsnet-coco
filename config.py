@@ -2,6 +2,8 @@ import tensorflow as tf
 
 flags = tf.app.flags
 
+flags.DEFINE_boolean('greyscale', False, 'whether or not to use greyscale images')
+
 ############################
 #    hyper parameters      #
 ############################

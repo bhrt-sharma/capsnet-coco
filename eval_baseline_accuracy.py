@@ -25,6 +25,8 @@ def main(args):
     # assert len(args) == 3 and isinstance(args[1], str) and isinstance(args[2], str)
     dataset = load_mscoco(cfg.phase, cfg, return_dataset=True)
     dataset_name = 'mscoco'
+    experiment_name = args[1]
+
     # dataset_name = args[1]
     # model_name = args[2]
     # dataset_size_train = dataset.X.shape[0]
