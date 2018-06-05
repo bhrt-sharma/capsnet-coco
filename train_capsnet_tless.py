@@ -45,8 +45,7 @@ def main(args):
   batch_x = tf.placeholder(tf.float32, shape=(cfg.batch_size, D, D, num_channels), name="input")
   batch_labels = tf.placeholder(tf.int32, shape=(cfg.batch_size), name="labels")
   one_hot_labels = tf.one_hot(batch_labels, num_classes)
-  batch_x_norm = slim.batch_norm(batch_x, center=False, is_training=True, trainable=True)
-  
+  batch_x_norm = slim.batch_norm(batch_x, center=True, is_training=True, trainable=True)
   poses, activations = nets.capsules_v0(batch_x_norm, num_classes=num_classes, iterations=cfg.iter_routing, cfg=cfg, name='capsulesEM-V0')
 
   # margin schedule
@@ -69,7 +68,7 @@ def main(args):
   acc = test_accuracy(activations, batch_labels)
   
   tf.summary.scalar('train_acc', acc)
-  # tf.summary.scalar('spread_loss', loss)
+  tf.summary.scalar('spread_loss', loss)
 
   """Compute gradient."""
   def _learning_rate_decay_fn(learning_rate, global_step):
@@ -84,9 +83,9 @@ def main(args):
     loss = loss,
     global_step = global_step,
     learning_rate = learning_rate,
-    optimizer = opt,
+    optimizer = opt
     # clip_gradients = False,
-    learning_rate_decay_fn = _learning_rate_decay_fn
+    # learning_rate_decay_fn = _learning_rate_decay_fn
   )
 
   # set best checkpoint
