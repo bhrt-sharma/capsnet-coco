@@ -23,15 +23,29 @@ logger = daiquiri.getLogger(__name__)
 def main(args):
     """Get dataset hyperparameters."""
     # assert len(args) == 3 and isinstance(args[1], str) and isinstance(args[2], str)
-    dataset = load_mscoco(cfg.phase, cfg, return_dataset=True)
-    dataset_name = 'mscoco'
+    assert len(args) == 3 and isinstance(args[1], str) and args[2] in ["mscoco", "tless"]
     experiment_name = args[1]
+    dataset_name = args[2]
+
+
+     """ GET DATA """
+    if dataset_name == 'mscoco':
+        test_dataset = load_mscoco('test', cfg, return_dataset=True)
+        dataset_name = 'mscoco' 
+        num_classes = 2
+    elif dataset_name == 'tless':
+        num_classes = 10
+        _, _, test_dataset = load_tless_split(cfg, num_classes)
+
+        # squash labels like so: turn original labels of [1, 55, 33, 33, 1, 33, 55] into [0, 2, 1, 1, 0, 1, 2]
+        _, test_dataset.y = np.unique(np.asarray(val_dataset.y), return_inverse=True)
 
     # dataset_name = args[1]
     # model_name = args[2]
     # dataset_size_train = dataset.X.shape[0]
-    dataset_size_test = dataset.X.shape[0]
-    num_classes = cfg.num_classes
+    dataset_size_test = test_dataset.X.shape[0]
+    D = test_dataset.X.shape[1]
+
     # create_inputs = get_create_inputs(
     #     dataset_name, is_train=False, epochs=cfg.epoch)
 
@@ -67,12 +81,12 @@ def main(args):
 
             coord = tf.train.Coordinator()
             threads = tf.train.start_queue_runners(sess=sess, coord=coord)
-            if not os.path.exists(cfg.test_logdir + '/{}/{}/'.format(model_name, dataset_name)):
-                os.makedirs(cfg.test_logdir + '/{}/{}/'.format(model_name, dataset_name))
+            if not os.path.exists(cfg.test_logdir + '/cnn_baseline/{}/'.format(experiment_name)):
+                os.makedirs(cfg.test_logdir + '/cnn_baseline/{}/'.format(experiment_name))
             summary_writer = tf.summary.FileWriter(
-                cfg.test_logdir + '/{}/{}/'.format(model_name, dataset_name), graph=sess.graph)  # graph=sess.graph, huge!
+                cfg.test_logdir + '/cnn_baseline/{}/'.format(experiment_name), graph=sess.graph)  # graph=sess.graph, huge!
 
-            files = os.listdir(cfg.logdir + '/{}/{}/'.format(model_name, dataset_name))
+            files = os.listdir(cfg.logdir + '/cnn_baseline/{}/'.format(experiment_name))
 
             for epoch in range(1, cfg.epoch):
                 # requires a regex to adapt the loss value in the file name here
@@ -82,7 +96,7 @@ def main(args):
                 #     if __file.endswith(".index"):
                 #         ckpt = os.path.join(cfg.logdir + '/{}/{}/'.format(model_name, dataset_name), __file[:-6])
                 #         print('ckpt is', ckpt)
-                ckpt = tf.train.get_checkpoint_state(cfg.logdir + '/cnn_baseline/{}/'.format(dataset_name))
+                ckpt = tf.train.get_checkpoint_state(cfg.logdir + '/cnn_baseline/{}/{}'.format(experiment_name))
                 # ckpt = os.path.join(cfg.logdir, "model.ckpt-%d" % (num_batches_per_epoch_train * epoch))
                 saver.restore(sess, ckpt.model_checkpoint_path)
 

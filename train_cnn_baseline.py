@@ -16,12 +16,14 @@ def main(args):
     assert len(args) == 3 and isinstance(args[1], str) and args[2] in ["mscoco", "tless"]
     experiment_name = args[1]
     dataset_name = args[2]
+    print('experiment name is', experiment_name)
+    print ('dataset name is ', dataset_name)
     """ GET DATA """
     if dataset_name == 'mscoco':
         train_dataset = load_mscoco(cfg.phase, cfg, return_dataset=True)
         val_dataset = load_mscoco('val', cfg, return_dataset=True)
         dataset_name = 'mscoco' 
-        num_classes = 91
+        num_classes = 2
     elif dataset_name == 'tless':
         num_classes = 10
         train_dataset, val_dataset, test_dataset = load_tless_split(cfg, num_classes)
