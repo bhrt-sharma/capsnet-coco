@@ -28,7 +28,7 @@ def main(args):
     dataset_name = args[2]
 
 
-     """ GET DATA """
+    """ GET DATA """
     if dataset_name == 'mscoco':
         test_dataset = load_mscoco('test', cfg, return_dataset=True)
         dataset_name = 'mscoco' 
@@ -84,8 +84,8 @@ def main(args):
             sess.run(tf.local_variables_initializer())
             sess.run(tf.global_variables_initializer())
 
-            coord = tf.train.Coordinator()
-            threads = tf.train.start_queue_runners(sess=sess, coord=coord)
+            # coord = tf.train.Coordinator()
+            # threads = tf.train.start_queue_runners(sess=sess, coord=coord)
             if not os.path.exists(cfg.test_logdir + '/cnn_baseline/{}/'.format(experiment_name)):
                 os.makedirs(cfg.test_logdir + '/cnn_baseline/{}/'.format(experiment_name))
             summary_writer = tf.summary.FileWriter(
@@ -106,8 +106,12 @@ def main(args):
                 saver.restore(sess, ckpt.model_checkpoint_path)
 
                 accuracy_sum = 0
-                for i in range(num_batches_test):
-                    batch_acc_v, summary_str = sess.run([batch_acc, summary_op])
+
+                while test_dataset.has_next_batch():
+                    test_batch = test_dataset.next_batch()
+                    feed_dict = {batch_x: test_batch[0].astype(np.float32), batch_labels: test_batch[1]}
+                    batch_acc_v, summary_str, step_out = sess.run([acc, summary_op, global_step], feed_dict=feed_dict)
+
                     print('%d batches are tested.' % step)
                     summary_writer.add_summary(summary_str, step)
 
@@ -118,7 +122,7 @@ def main(args):
                 ave_acc = accuracy_sum / num_batches_test
                 print('the average accuracy is %f' % ave_acc)
 
-            coord.join(threads)
+            # coord.join(threads)
 
 
 if __name__ == "__main__":
