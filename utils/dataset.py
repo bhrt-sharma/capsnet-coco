@@ -6,9 +6,9 @@ from skimage.transform import resize
 from scipy.ndimage import imread
 import json
 import scipy
-import data.smallNORB as norb
+# import data.smallNORB as norb
 import tensorflow as tf 
-from norb_config import cfg
+from config import cfg
 def load_norb(is_train: bool, epochs: int):
 
     import re

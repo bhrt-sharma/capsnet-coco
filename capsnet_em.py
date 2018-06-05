@@ -6,7 +6,7 @@ E-mail: zhangsuofei at njupt.edu.cn | hangyu5 at illinois.edu
 
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
-from norb_config import cfg
+from config import cfg
 import numpy as np
 
 def cross_ent_loss(output, x, y):
@@ -161,7 +161,7 @@ def build_arch_baseline(input, is_train: bool, num_classes: int):
         return output
 
 
-def build_arch(input, coord_add, is_train: bool, num_classes: int):
+def build_arch(input, is_train: bool, num_classes: int):
     test1 = []
     data_size = int(input.get_shape()[1])
     # xavier initialization is necessary here to provide higher stability
@@ -256,11 +256,11 @@ def build_arch(input, coord_add, is_train: bool, num_classes: int):
                                              data_size, cfg.D, num_classes, 16]
                 tf.logging.info('class cap votes original shape: {}'.format(votes.get_shape()))
 
-                coord_add = np.reshape(coord_add, newshape=[data_size * data_size, 1, 1, 2])
-                coord_add = np.tile(coord_add, [cfg.batch_size, cfg.D, num_classes, 1])
-                coord_add_op = tf.constant(coord_add, dtype=tf.float32)
+                # coord_add = np.reshape(coord_add, newshape=[data_size * data_size, 1, 1, 2])
+                # coord_add = np.tile(coord_add, [cfg.batch_size, cfg.D, num_classes, 1])
+                # coord_add_op = tf.constant(coord_add, dtype=tf.float32)
 
-                votes = tf.concat([coord_add_op, votes], axis=3)
+                # votes = tf.concat([coord_add_op, votes], axis=3)
                 tf.logging.info('class cap votes coord add shape: {}'.format(votes.get_shape()))
 
             with tf.variable_scope('routing') as scope:

@@ -3,9 +3,9 @@ import scipy
 import numpy as np
 import tensorflow as tf
 
-from norb_config import cfg
+from config import cfg
 from .dataset import Dataset, TLessDataset
-from .dataset import load_mscoco, load_tless_split, load_norb
+from .dataset import load_mscoco, load_tless_split
 
 
 def test_accuracy(logits, labels):

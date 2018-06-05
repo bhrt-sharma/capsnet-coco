@@ -1,163 +1,176 @@
+"""
+License: Apache-2.0
+Author: Suofei Zhang | Hang Yu
+E-mail: zhangsuofei at njupt.edu.cn | hangyu5 at illinois.edu
+"""
+
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
 from config import cfg
-from utils import load_mscoco, test_accuracy, one_hot_encode, mnist
+import time
 import numpy as np
+import sys
 import os
-from tqdm import tqdm
-from models.capsules import nets
+import capsnet_em as net
+
+import logging
+import daiquiri
 from utils import load_tless_split
+
+daiquiri.setup()
+logger = daiquiri.getLogger(__name__)
 
 
 def main(args):
-  tf.logging.set_verbosity(tf.logging.INFO)
-  num_classes = 2
-
   if cfg.greyscale:
     print("\nUsing greyscale images.")
 
-  experiment_name = args[1]
-  """ GET DATA """
   print("\nGetting train, val, and test data...")
+  num_classes = 2
 
-  train_dataset, val_dataset, _ = load_tless_split(cfg, num_classes=num_classes)
+  train_dataset, val_dataset, test_dataset = load_tless_split(cfg, num_classes)
+  print ('got data')
   # squash labels like so: turn original labels of [1, 55, 33, 33, 1, 33, 55] into [0, 2, 1, 1, 0, 1, 2]
   _, train_dataset.y = np.unique(np.asarray(train_dataset.y), return_inverse=True)
   _, val_dataset.y = np.unique(np.asarray(val_dataset.y), return_inverse=True)
 
+  """Get dataset hyperparameters."""
+  # assert len(args) == 2 and isinstance(args[1], str)
+  dataset_name = 'tless'
+  logger.info('Using dataset: {}'.format(dataset_name))
 
-  checkpoints_to_keep = 1
-  N, D = train_dataset.X.shape[0], train_dataset.X.shape[1]
-  print("\nNum classes", num_classes)
-  num_batches_per_epoch = int(N / cfg.batch_size)
+  """Set reproduciable random seed"""
+  tf.set_random_seed(1234)
 
-  """ SET UP INITIAL VARIABLES"""
-  learning_rate = tf.constant(cfg.initial_learning_rate)
-  opt = tf.train.AdamOptimizer(cfg.initial_learning_rate)
-  global_step = tf.Variable(0, name='global_step', trainable=False)
-  tf.summary.scalar('learning_rate', learning_rate)
+  # coord_add = get_coord_add(dataset_name)
+  dataset_size = train_dataset.X.shape[0]
 
-  """ DEFINE DATA FLOW """
-  if cfg.greyscale:
-    num_channels = 1
-  else:
-    num_channels = 3
-  batch_x = tf.placeholder(tf.float32, shape=(cfg.batch_size, D, D, num_channels), name="input")
-  batch_labels = tf.placeholder(tf.int32, shape=(cfg.batch_size), name="labels")
-  one_hot_labels = tf.one_hot(batch_labels, num_classes)
-  batch_x_norm = slim.batch_norm(batch_x, center=False, is_training=True, trainable=True)
-  
-  poses, activations = nets.capsules_v0(batch_x_norm, num_classes=num_classes, iterations=cfg.iter_routing, cfg=cfg, name='capsulesEM-V0')
+  with tf.Graph().as_default(), tf.device('/cpu:0'):
+      """Get global_step."""
+      global_step = tf.get_variable(
+          'global_step', [], initializer=tf.constant_initializer(0), trainable=False)
 
-  # margin schedule
-  # margin increase from 0.2 to 0.9 after margin_schedule_epoch_achieve_max
-  margin_schedule_epoch_achieve_max = 10.0
-  margin = tf.train.piecewise_constant(
-    tf.cast(global_step, dtype=tf.int32),
-    boundaries=[
-     int(num_batches_per_epoch * margin_schedule_epoch_achieve_max * x / 7) for x in range(1, 8)
-    ],
-    values=[
-      x / 10.0 for x in range(2, 10)
-    ]
-  )
-  
-  loss = nets.spread_loss(
-    one_hot_labels, activations, margin=margin, name='spread_loss'
-  )
+      """Get batches per epoch."""
+      num_batches_per_epoch = int(dataset_size / cfg.batch_size)
 
-  acc = test_accuracy(activations, batch_labels)
-  
-  tf.summary.scalar('train_acc', acc)
-  # tf.summary.scalar('spread_loss', loss)
+      """Use exponential decay leanring rate?"""
+      lrn_rate = tf.maximum(tf.train.exponential_decay(
+          1e-3, global_step, num_batches_per_epoch, 0.8), 1e-5)
+      tf.summary.scalar('learning_rate', lrn_rate)
+      opt = tf.train.AdamOptimizer()  # lrn_rate
 
-  """Compute gradient."""
-  def _learning_rate_decay_fn(learning_rate, global_step):
-      return tf.train.exponential_decay(
-                      learning_rate,
-                      global_step,
-                      decay_steps = num_batches_per_epoch,
-                      decay_rate = 0.9,
-                      staircase = True)
+      """Get batch from data queue."""
+      images, labels = train_dataset.X.astype(np.float32), train_dataset.y
+      data_queues = tf.train.slice_input_producer([images, labels])
+      batch_x, batch_labels = tf.train.shuffle_batch(
+        data_queues,
+        num_threads=16,
+        batch_size=cfg.batch_size,
+        capacity=cfg.batch_size * 64,
+        min_after_dequeue=cfg.batch_size * 32,
+        allow_smaller_final_batch=False)
 
-  opt_op = tf.contrib.layers.optimize_loss(
-    loss = loss,
-    global_step = global_step,
-    learning_rate = learning_rate,
-    optimizer = opt,
-    # clip_gradients = False,
-    learning_rate_decay_fn = _learning_rate_decay_fn
-  )
+      # batch_y = tf.one_hot(batch_labels, depth=10, axis=1, dtype=tf.float32)
 
-  # set best checkpoint
-  bestmodel_dir = os.path.join(cfg.logdir + '/capsnet/{}'.format(experiment_name), 'best_checkpoint')
-  if not os.path.exists(bestmodel_dir):
-      os.makedirs(bestmodel_dir)
-  bestmodel_ckpt_path = os.path.join(bestmodel_dir, "capsnet_best.ckpt")
-  train_saver = tf.train.Saver(tf.global_variables(), max_to_keep = checkpoints_to_keep)
-  bestmodel_saver = tf.train.Saver(tf.global_variables(), max_to_keep = checkpoints_to_keep)
-  summary_op = tf.summary.merge_all()
+      """Define the dataflow graph."""
+      m_op = tf.placeholder(dtype=tf.float32, shape=())
+      with tf.device('/gpu:0'):
+          with slim.arg_scope([slim.variable], device='/cpu:0'):
+              batch_squash = tf.divide(batch_x, 255.)
+              batch_x = slim.batch_norm(batch_x, center=False, is_training=True, trainable=True)
+              output, pose_out = net.build_arch(batch_x, is_train=True,
+                                                num_classes=num_classes)
+              # loss = net.cross_ent_loss(output, batch_labels)
+              tf.logging.debug(pose_out.get_shape())
+              loss, spread_loss, mse, _ = net.spread_loss(
+                  output, pose_out, batch_squash, batch_labels, m_op)
+              acc = net.test_accuracy(output, batch_labels)
+              tf.summary.scalar('spread_loss', spread_loss)
+              tf.summary.scalar('reconstruction_loss', mse)
+              tf.summary.scalar('all_loss', loss)
+              tf.summary.scalar('train_acc', acc)
 
-  """ RUN GRAPH """
-  with tf.Session() as sess:
-      if cfg.phase == 'train':
-          sess.run(tf.local_variables_initializer())
-          sess.run(tf.global_variables_initializer())
-          tf.get_default_graph().finalize()
+          """Compute gradient."""
+          grad = opt.compute_gradients(loss)
+          # See: https://stackoverflow.com/questions/40701712/how-to-check-nan-in-gradients-in-tensorflow-when-updating
+          grad_check = [tf.check_numerics(g, message='Gradient NaN Found!')
+                        for g, _ in grad if g is not None] + [tf.check_numerics(loss, message='Loss NaN Found')]
 
-          """Set summary writers"""
-          if not os.path.exists(cfg.logdir + '/capsnet/{}/train_log/'.format(experiment_name)):
-              os.makedirs(cfg.logdir + '/capsnet/{}/train_log/'.format(experiment_name))
-          summary_writer = tf.summary.FileWriter(
-              cfg.logdir + '/capsnet/{}/train_log/'.format(experiment_name), graph=sess.graph)
+      """Apply graident."""
+      with tf.control_dependencies(grad_check):
+          update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+          with tf.control_dependencies(update_ops):
+              train_op = opt.apply_gradients(grad, global_step=global_step)
 
-          """Main loop"""
-          best_loss = None
-          best_acc = None 
-          print("Num epochs: ", cfg.num_epochs, " Num batches per epoch: ", num_batches_per_epoch)
-          for e in list(range(cfg.num_epochs)):
-              for b in list(range(num_batches_per_epoch)):
-                  batch = train_dataset.next_batch()
-                  feed_dict = {batch_x: batch[0].astype(np.float32), batch_labels: batch[1]}
-                  _, loss_value, accuracy, summary_str, step_out = sess.run([opt_op, loss, acc, summary_op, global_step], feed_dict=feed_dict)
-                  summary_writer.add_summary(summary_str, step_out)
-              print("Step: ", step_out)
-              print("Loss and accuracy: ", loss_value, accuracy)
-              train_dataset.reset()
+      """Set Session settings."""
+      sess = tf.Session(config=tf.ConfigProto(
+          allow_soft_placement=True, log_device_placement=False))
+      sess.run(tf.local_variables_initializer())
+      sess.run(tf.global_variables_initializer())
 
-              #save model after every epoch 
-              print('saving model now :)')
-              train_ckpt_path = os.path.join(
-                  cfg.logdir + '/capsnet/{}'.format(experiment_name), 'model-{:.4f}.ckpt'.format(loss_value))
-              train_saver.save(sess, train_ckpt_path, global_step=step_out)
+      """Set Saver."""
+      var_to_save = [v for v in tf.global_variables(
+      ) if 'Adam' not in v.name]  # Don't save redundant Adam beta/gamma
+      saver = tf.train.Saver(var_list=var_to_save, max_to_keep=cfg.epoch)
 
-              # eval on validation loss 
-              loss_per_val_batch = 0.0
-              acc_per_val_batch = 0.0
-              num_val_batches = 0
-              while val_dataset.has_next_batch():
-                  val_batch = val_dataset.next_batch()
-                  feed_dict = {batch_x: val_batch[0].astype(np.float32), batch_labels: val_batch[1]}
-                  dev_loss, dev_acc, summary_str, step_out = sess.run([loss, acc, summary_op, global_step], feed_dict=feed_dict)
-                  loss_per_val_batch += loss_value
-                  acc_per_val_batch += dev_acc
-                  num_val_batches +=1 
-              avg_val_loss = loss_per_val_batch / num_val_batches
-              avg_val_acc = acc_per_val_batch / num_val_batches
-              write_summary(avg_val_loss, "dev/avg_validation_loss", summary_writer, step_out)
-              write_summary(avg_val_acc, "dev/avg_validation_acc", summary_writer, step_out)
+      """Display parameters"""
+      total_p = np.sum([np.prod(v.get_shape().as_list()) for v in var_to_save]).astype(np.int32)
+      train_p = np.sum([np.prod(v.get_shape().as_list())
+                        for v in tf.trainable_variables()]).astype(np.int32)
+      logger.info('Total Parameters: {}'.format(total_p))
+      logger.info('Trainable Parameters: {}'.format(train_p))
 
-              if best_acc is None or avg_val_acc > best_acc:
-                  print('saving best model!', 'avg_val_acc is: ', avg_val_acc, 'previous best acc is: ', best_acc)
-                  bestmodel_saver.save(sess, bestmodel_ckpt_path, global_step=step_out)
-                  best_acc = avg_val_acc
-              val_dataset.reset()
+      # read snapshot
+      # latest = os.path.join(cfg.logdir, 'model.ckpt-4680')
+      # saver.restore(sess, latest)
+      """Set summary op."""
+      summary_op = tf.summary.merge_all()
 
-def write_summary(value, tag, summary_writer, global_step):
-    """Write a single summary value to tensorboard"""
-    summary = tf.Summary()
-    summary.value.add(tag=tag, simple_value=value)
-    summary_writer.add_summary(summary, global_step)
+      """Start coord & queue."""
+      coord = tf.train.Coordinator()
+      threads = tf.train.start_queue_runners(sess=sess, coord=coord)
+
+      """Set summary writer"""
+      if not os.path.exists(cfg.logdir + '/caps/{}/train_log/'.format(dataset_name)):
+          os.makedirs(cfg.logdir + '/caps/{}/train_log/'.format(dataset_name))
+      summary_writer = tf.summary.FileWriter(
+          cfg.logdir + '/caps/{}/train_log/'.format(dataset_name), graph=sess.graph)  # graph = sess.graph, huge!
+
+      """Main loop."""
+      m_min = 0.2
+      m_max = 0.9
+      m = m_min
+      for step in range(cfg.epoch * num_batches_per_epoch + 1):
+          tic = time.time()
+          """"TF queue would pop batch until no file"""
+          try:
+              _, loss_value, summary_str = sess.run(
+                  [train_op, loss, summary_op], feed_dict={m_op: m})
+              logger.info('%d iteration finishs in ' % step + '%f second' %
+                          (time.time() - tic) + ' loss=%f' % loss_value)
+          except KeyboardInterrupt:
+              sess.close()
+              sys.exit()
+          except tf.errors.InvalidArgumentError:
+              logger.warning('%d iteration contains NaN gradients. Discard.' % step)
+              continue
+          else:
+              """Write to summary."""
+              if step % 5 == 0:
+                  summary_writer.add_summary(summary_str, step)
+
+              """Epoch wise linear annealling."""
+              if (step % num_batches_per_epoch) == 0:
+                  if step > 0:
+                      m += (m_max - m_min) / (cfg.epoch * cfg.m_schedule)
+                      if m > m_max:
+                          m = m_max
+
+                  """Save model periodically"""
+                  ckpt_path = os.path.join(
+                      cfg.logdir + '/caps/{}/'.format(dataset_name), 'model-{:.4f}.ckpt'.format(loss_value))
+                  saver.save(sess, ckpt_path, global_step=step)
+
 
 if __name__ == "__main__":
-  tf.app.run()
+    tf.app.run()
