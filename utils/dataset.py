@@ -3,7 +3,7 @@ import math
 import numpy as np
 import skimage.io as io
 from skimage.transform import resize
-from scipy.ndimage import imread
+from scipy.ndimage import imread, gaussian_filter
 import json
 import scipy
 
@@ -207,6 +207,8 @@ class TLessDataset(Dataset):
                     else:
                         img_arr = imread("{}/{}".format(img_folder, img_file), mode="L")[:,:,np.newaxis]
                         img_arr[np.where((img_arr<=[50]))] = [220]
+
+                    img_arr = gaussian_filter(img_arr, 0.9)
                     img_arr = self._crop_and_shrink_image(img_arr)
                     self.X.append(img_arr)
                     self.y.append(int(class_folder))
@@ -216,7 +218,7 @@ class TLessDataset(Dataset):
 
         self.setup()
 
-    def _crop_and_shrink_image(self, im, crop_width=100, crop_height=100, new_width=48, new_height=48):
+    def _crop_and_shrink_image(self, im, crop_width=96, crop_height=96, new_width=32, new_height=32):
         width, height = im.shape[0], im.shape[1]  # Get dimensions
 
         left = (width - crop_width)//2
