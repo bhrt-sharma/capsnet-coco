@@ -6,7 +6,39 @@ from skimage.transform import resize
 from scipy.ndimage import imread
 import json
 import scipy
+import data.smallNORB as norb
+import tensorflow as tf 
+from norb_config import cfg
+def load_norb(is_train: bool, epochs: int):
 
+    import re
+    if is_train:
+        CHUNK_RE = re.compile(r"train\d+\.tfrecords")
+    else:
+        CHUNK_RE = re.compile(r"test\d+\.tfrecords")
+
+    processed_dir = './data'
+    chunk_files = [os.path.join(processed_dir, fname)
+                   for fname in os.listdir(processed_dir)
+                   if CHUNK_RE.match(fname)]
+    print('these are chunk files', chunk_files)
+    image, label = norb.read_norb_tfrecord(chunk_files, epochs)
+
+    if is_train:
+        # TODO: is it the right order: add noise, resize, then corp?
+        image = tf.image.random_brightness(image, max_delta=32. / 255.)
+        image = tf.image.random_contrast(image, lower=0.5, upper=1.5)
+
+        image = tf.image.resize_images(image, [48, 48])
+        image = tf.random_crop(image, [32, 32, 1])
+    else:
+        image = tf.image.resize_images(image, [48, 48])
+        image = tf.slice(image, [8, 8, 0], [32, 32, 1])
+
+    x, y = tf.train.shuffle_batch([image, label], num_threads=cfg.num_threads, batch_size=cfg.batch_size, capacity=cfg.batch_size * 64,
+                                  min_after_dequeue=cfg.batch_size * 32, allow_smaller_final_batch=False)
+
+    return x, y
 
 def load_mscoco(dataset_type, config, num=None, return_dataset=False):
     if dataset_type == 'train':
