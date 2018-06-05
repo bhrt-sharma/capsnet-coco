@@ -37,6 +37,12 @@ def main(args):
     print("\nNum classes", num_classes)
     num_batches_per_epoch = int(N / cfg.batch_size)
 
+    if cfg.greyscale:
+        print('using greyscale')
+        num_channels = 1 
+    else:
+        num_channels = 3 
+
     """ SET UP INITIAL VARIABLES"""
     learning_rate = tf.constant(cfg.initial_learning_rate)
     opt = tf.train.AdamOptimizer(cfg.initial_learning_rate)
@@ -44,7 +50,7 @@ def main(args):
     tf.summary.scalar('learning_rate', learning_rate)
 
     """ DEFINE DATA FLOW """
-    batch_x = tf.placeholder(tf.float32, shape=(cfg.batch_size, D, D, 3), name="input")
+    batch_x = tf.placeholder(tf.float32, shape=(cfg.batch_size, D, D, num_channels), name="input")
     batch_labels = tf.placeholder(tf.int32, shape=(cfg.batch_size), name="labels")
     batch_x_squash = tf.divide(batch_x, 255.)
     batch_x_norm = slim.batch_norm(batch_x, center=False, is_training=True, trainable=True)

@@ -46,6 +46,11 @@ def main(args):
     dataset_size_test = test_dataset.X.shape[0]
     D = test_dataset.X.shape[1]
 
+    if cfg.greyscale:
+        print('using greyscale')
+        num_channels = 1 
+    else:
+        num_channels = 3 
     # create_inputs = get_create_inputs(
     #     dataset_name, is_train=False, epochs=cfg.epoch)
 
@@ -56,7 +61,7 @@ def main(args):
         # num_batches_per_epoch_train = int(dataset_size_train / cfg.batch_size)
         num_batches_test = int(dataset_size_test / cfg.batch_size * 0.1)
 
-        batch_x = tf.placeholder(tf.float32, shape=(cfg.batch_size, D, D, 3), name="input")
+        batch_x = tf.placeholder(tf.float32, shape=(cfg.batch_size, D, D, num_channels), name="input")
         batch_labels = tf.placeholder(tf.int32, shape=(cfg.batch_size), name="labels")        
         batch_x = slim.batch_norm(batch_x, center=False, is_training=False, trainable=False)
         batch_x_squash = tf.divide(batch_x, 255.)
