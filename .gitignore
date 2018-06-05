@@ -3,7 +3,8 @@
 *.zip
 *.json
 *.DS_Store
-
+data/
+download_t-less.sh
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
