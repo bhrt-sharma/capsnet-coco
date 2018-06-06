@@ -41,8 +41,12 @@ def save_to():
 
 
 def train(model, supervisor, num_label):
-    trX, trY, num_tr_batch, valX, valY, num_val_batch = load_data(cfg.dataset, cfg.batch_size, is_training=True)
-    Y = valY[:num_val_batch * cfg.batch_size].reshape((-1, 1))
+    train_dataset, val_dataset, _ = load_tless_split(cfg, num_classes=2)
+    num_tr_batch = train_dataset.X.shape[0] // cfg.batch_size
+    num_val_batch = val_dataset.X.shape[0] // cfg.batch_size
+    trX, trY = train_dataset.X, train_dataset.y
+    valX, valY = val_dataset.X, val_dataset.y
+    # Y = valY[:num_val_batch * cfg.batch_size].reshape((-1, 1))
 
     fd_train_acc, fd_loss, fd_val_acc = save_to()
     config = tf.ConfigProto()
@@ -91,7 +95,9 @@ def train(model, supervisor, num_label):
 
 
 def evaluation(model, supervisor, num_label):
-    teX, teY, num_te_batch = load_data(cfg.dataset, cfg.batch_size, is_training=False)
+    _, _, test_dataset = load_tless_split(cfg, num_classes=2)
+    teX, teY = test_dataset.X, test_dataset.y
+    num_te_batch = test_dataset.X.shape[0] // cfg.batch_size
     fd_test_acc = save_to()
     with supervisor.managed_session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
         supervisor.saver.restore(sess, tf.train.latest_checkpoint(cfg.logdir))

@@ -8,8 +8,7 @@ import tensorflow as tf
 
 from config import cfg
 from utils import get_batch_data
-from utils import softmax
-from utils import reduce_sum
+from utils import softmax, reduce_sum
 from capsLayer import CapsLayer
 
 
