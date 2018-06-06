@@ -11,7 +11,7 @@ from .dataset import load_mscoco, load_tless_split
 
 def get_batch_data(batch_size, num_threads):
     train, val, _ = load_tless_split(cfg, num_classes=2)
-    trX, trY = train.X, train.y
+    trX, trY = train.X.astype(np.float32), train.y
     data_queues = tf.train.slice_input_producer([trX, trY])
     X, Y = tf.train.shuffle_batch(data_queues, num_threads=num_threads,
                                   batch_size=batch_size,
