@@ -37,6 +37,7 @@ flags.DEFINE_integer('D', 16, 'number of channels in output from ConvCaps2')
 flags.DEFINE_integer('num_threads', 8, 'number of threads of enqueueing exampls')
 flags.DEFINE_string('logdir', 'logs', 'logs directory')
 flags.DEFINE_string('test_logdir', 'test_logs', 'test logs directory')
+flags.DEFINE_string('phase', 'train', 'train, test')
 
 cfg = tf.app.flags.FLAGS
 

@@ -254,10 +254,10 @@ class FashionMNISTDataset(Dataset):
         (x_train, y_train), (x_test, y_test) = fashion_mnist.load_data()
 
         if (is_train):
-            self.X = x_train
+            self.X = x_train[:,:,:,np.newaxis]
             self.y = y_train
         else:
-            self.X = x_test
+            self.X = x_test[:,:,:,np.newaxis]
             self.y = y_test
 
         self.setup()

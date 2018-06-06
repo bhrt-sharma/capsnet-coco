@@ -11,7 +11,7 @@ from utils import load_fashion_mnist
 
 def main(args):
   tf.logging.set_verbosity(tf.logging.INFO)
-  num_classes = 2
+  num_classes = 10
 
   if cfg.greyscale:
     print("\nUsing greyscale images.")
