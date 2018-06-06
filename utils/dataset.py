@@ -174,6 +174,8 @@ def load_tless_split(config, num_classes=5):
     return train_set, val_set, test_set
 
 
+
+
 class TLessDataset(Dataset):
     def __init__(self, files, num_classes=5, batch_size=50, is_train=True, greyscale=False, shuffle=True, mean_center_unit_var=False):
         self.batch_size = batch_size
@@ -235,4 +237,27 @@ class TLessDataset(Dataset):
     
         return final_image
 
-    
+
+def load_fashion_mnist(cfg):
+    return FashionMNISTDataset(batch_size=cfg.batch_size, is_train=True), FashionMNISTDataset(batch_size=cfg.batch_size, is_train=False)
+
+
+class FashionMNISTDataset(Dataset):
+    def __init__(self, batch_size=50, is_train=True, shuffle=True):
+        self.batch_size = batch_size
+        self.is_train = is_train
+        self.shuffle = shuffle
+        self.current_idx = 0
+
+        from keras.datasets import fashion_mnist
+
+        (x_train, y_train), (x_test, y_test) = fashion_mnist.load_data()
+
+        if (is_train):
+            self.X = x_train
+            self.y = y_train
+        else:
+            self.X = x_test
+            self.y = y_test
+
+        self.setup()
