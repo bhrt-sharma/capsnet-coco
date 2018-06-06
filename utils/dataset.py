@@ -239,7 +239,7 @@ class TLessDataset(Dataset):
 
 
 def load_fashion_mnist(cfg):
-    return FashionMNISTDataset(batch_size=cfg.batch_size, is_train=True), FashionMNISTDataset(batch_size=cfg.batch_size, is_train=False)
+    return FashionMNISTDataset(batch_size=cfg.batch_size, is_train=True), FashionMNISTDataset(batch_size=cfg.batch_size, is_train=True)
 
 
 class FashionMNISTDataset(Dataset):

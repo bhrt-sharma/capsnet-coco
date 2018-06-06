@@ -137,6 +137,8 @@ def main(args):
                   loss_per_val_batch += loss_value
                   acc_per_val_batch += dev_acc
                   num_val_batches +=1 
+                  if num_val_batches % 10 == 0:
+                      print("Val batch %d" % num_val_batches)
               avg_val_loss = loss_per_val_batch / num_val_batches
               avg_val_acc = acc_per_val_batch / num_val_batches
               write_summary(avg_val_loss, "dev/avg_validation_loss", summary_writer, step_out)
