@@ -12,10 +12,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 from torch.optim import lr_scheduler
-from config import cfg
 
 from Capsules import PrimaryCaps, ConvCaps
-from caps_torch_utils import get_args, get_dataloader
+from utils import get_args, get_dataloader
 
 class CapsNet(nn.Module):
     def __init__(self,A=32,B=32,C=32,D=32, E=10,r = 3):
@@ -56,21 +55,26 @@ class CapsNet(nn.Module):
 if __name__ == "__main__":
     args = get_args()
     train_loader, test_loader = get_dataloader(args)
-    use_cuda = torch.cuda.is_available()
-    steps = len(train_loader.dataset)//cfg.batch_size
+    use_cuda = args.use_cuda
+    steps = len(train_loader.dataset)//args.batch_size
     lambda_ = 1e-3 #TODO:find a good schedule to increase lambda and m
     m = 0.2
-    A,B,C,D,E,r = 64,8,16,16,10,cfg.iter_routing # a small CapsNet
-#    A,B,C,D,E,r = 32,32,32,32,10,cfg.iter_routing # a classic CapsNet
+    A,B,C,D,E,r = 64,8,16,16,10,args.r # a small CapsNet
+#    A,B,C,D,E,r = 32,32,32,32,10,args.r # a classic CapsNet
     model = CapsNet(A,B,C,D,E,r)
-    with torch.cuda.device(0):
+    with torch.cuda.device(args.gpu):
+#        print(args.gpu, type(args.gpu))
+        if args.pretrained:
+            model.load_state_dict(torch.load(args.pretrained))
+            m = 0.8
+            lambda_ = 0.9
         if use_cuda:
             print("activating cuda")
             model.cuda()
             
-        optimizer = torch.optim.Adam(model.parameters(), lr=cfg.initial_learning_rate)
+        optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
         scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, 'max',patience = 1)
-        for epoch in range(cfg.num_epochs):
+        for epoch in range(args.num_epochs):
             #Train
             print("Epoch {}".format(epoch))
             b = 0
@@ -90,16 +94,16 @@ if __name__ == "__main__":
                 out = model(imgs,lambda_) #b,10,17
                 out_poses, out_labels = out[:,:-10],out[:,-10:] #b,16*10; b,10
                 loss = model.loss(out_labels, labels, m)
-                torch.nn.utils.clip_grad_norm(model.parameters(), 4)
+                torch.nn.utils.clip_grad_norm(model.parameters(), args.clip)
                 loss.backward()
                 optimizer.step()
                 #stats
                 pred = out_labels.max(1)[1] #b
                 acc = pred.eq(labels).cpu().sum().data[0]
                 correct += acc
-                if b % 10 == 0:                          
+                if b % args.print_freq == 0:                          
                     print("batch:{}, loss:{:.4f}, acc:{:}/{}".format(
-                            b, loss.data[0],acc, cfg.batch_size))
+                            b, loss.data[0],acc, args.batch_size))
             acc = correct/len(train_loader.dataset)
             print("Epoch{} Train acc:{:4}".format(epoch, acc))
             scheduler.step(acc)
