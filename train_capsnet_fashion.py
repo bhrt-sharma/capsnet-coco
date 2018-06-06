@@ -72,16 +72,16 @@ def main(args):
                       learning_rate,
                       global_step,
                       decay_steps = num_batches_per_epoch,
-                      decay_rate = 0.9,
+                      decay_rate = 0.95,
                       staircase = True)
 
   opt_op = tf.contrib.layers.optimize_loss(
     loss = loss,
     global_step = global_step,
     learning_rate = learning_rate,
-    optimizer = opt
+    optimizer = opt,
     # clip_gradients = False,
-    # learning_rate_decay_fn = _learning_rate_decay_fn
+    learning_rate_decay_fn = _learning_rate_decay_fn
   )
 
   # set best checkpoint
