@@ -4,7 +4,7 @@ import numpy as np
 import tensorflow as tf
 from tqdm import tqdm
 
-from config import cfg
+from dr_config import cfg
 from utils import load_tless_split
 from capsNet import CapsNet
 

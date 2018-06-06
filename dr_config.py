@@ -7,6 +7,8 @@ flags = tf.app.flags
 #    hyper parameters      #
 ############################
 
+flags.DEFINE_boolean('greyscale', False, 'whether or not to use greyscale images')
+
 # For separate margin loss
 flags.DEFINE_float('m_plus', 0.9, 'the parameter of m plus')
 flags.DEFINE_float('m_minus', 0.1, 'the parameter of m minus')

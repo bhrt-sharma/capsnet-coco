@@ -6,7 +6,7 @@ E-mail: naturomics.liao@gmail.com
 
 import tensorflow as tf
 
-from config import cfg
+from dr_config import cfg
 from utils import get_batch_data
 from utils import softmax, reduce_sum
 from capsLayer import CapsLayer
@@ -20,7 +20,7 @@ class CapsNet(object):
         self.graph = tf.Graph()
         with self.graph.as_default():
             if is_training:
-                self.X, self.labels = get_batch_data(cfg.dataset, cfg.batch_size, cfg.num_threads)
+                self.X, self.labels = get_batch_data(cfg.batch_size, cfg.num_threads)
                 self.Y = tf.one_hot(self.labels, depth=10, axis=1, dtype=tf.float32)
 
                 self.build_arch()

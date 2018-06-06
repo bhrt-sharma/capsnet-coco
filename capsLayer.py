@@ -7,7 +7,7 @@ E-mail: naturomics.liao@gmail.com
 import numpy as np
 import tensorflow as tf
 
-from config import cfg
+from dr_config import cfg
 from utils import reduce_sum
 from utils import softmax
 
