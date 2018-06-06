@@ -239,13 +239,13 @@ class TLessDataset(Dataset):
 
 
 def load_fashion_mnist(cfg):
-    return FashionMNISTDataset(batch_size=cfg.batch_size, is_train=True), FashionMNISTDataset(batch_size=cfg.batch_size, is_train=True)
+    return FashionMNISTDataset(batch_size=cfg.batch_size, phase='train'), FashionMNISTDataset(batch_size=cfg.batch_size, phase='val')
 
 
 class FashionMNISTDataset(Dataset):
-    def __init__(self, batch_size=50, is_train=True, shuffle=True):
+    def __init__(self, batch_size=50, phase='train', shuffle=True):
         self.batch_size = batch_size
-        self.is_train = is_train
+        self.is_train = (phase == 'train') or (phase == 'val')
         self.shuffle = shuffle
         self.current_idx = 0
 
@@ -253,7 +253,7 @@ class FashionMNISTDataset(Dataset):
 
         (x_train, y_train), (x_test, y_test) = fashion_mnist.load_data()
 
-        if (is_train):
+        if (phase == 'train'):
             self.X = x_train[:,:,:,np.newaxis]
             self.y = y_train
         else:

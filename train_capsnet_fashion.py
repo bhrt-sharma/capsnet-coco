@@ -134,7 +134,7 @@ def main(args):
                   val_batch = val_dataset.next_batch()
                   feed_dict = {batch_x: val_batch[0].astype(np.float32), batch_labels: val_batch[1]}
                   dev_loss, dev_acc, summary_str, step_out = sess.run([loss, acc, summary_op, global_step], feed_dict=feed_dict)
-                  loss_per_val_batch += loss_value
+                  loss_per_val_batch += dev_loss
                   acc_per_val_batch += dev_acc
                   num_val_batches +=1 
                   if num_val_batches % 10 == 0:
@@ -150,6 +150,8 @@ def main(args):
                   best_acc = avg_val_acc
               val_dataset.reset()
 
+
+              
 def write_summary(value, tag, summary_writer, global_step):
     """Write a single summary value to tensorboard"""
     summary = tf.Summary()

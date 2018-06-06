@@ -138,7 +138,7 @@ def main(args):
                   val_batch = val_dataset.next_batch()
                   feed_dict = {batch_x: val_batch[0].astype(np.float32), batch_labels: val_batch[1]}
                   dev_loss, dev_acc, summary_str, step_out = sess.run([loss, acc, summary_op, global_step], feed_dict=feed_dict)
-                  loss_per_val_batch += loss_value
+                  loss_per_val_batch += dev_loss
                   acc_per_val_batch += dev_acc
                   num_val_batches +=1 
               avg_val_loss = loss_per_val_batch / num_val_batches
