@@ -38,7 +38,7 @@ def main(args):
         _, _, test_dataset = load_tless_split(cfg, num_classes)
 
         # squash labels like so: turn original labels of [1, 55, 33, 33, 1, 33, 55] into [0, 2, 1, 1, 0, 1, 2]
-        _, test_dataset.y = np.unique(np.asarray(val_dataset.y), return_inverse=True)
+        _, test_dataset.y = np.unique(np.asarray(test_dataset.y), return_inverse=True)
     elif dataset_name == "fashion":
         test_dataset = load_fashion_mnist(cfg, phase = 'test')
         num_classes = 10
@@ -96,7 +96,9 @@ def main(args):
 
             print ('this is ckpt', ckpt)
             print ('these are vars?', list_variables(cfg.logdir + '/cnn_baseline/{}/best_checkpoint/'.format(experiment_name)))
-            for epoch in range(1, cfg.num_epochs):
+            epoch_accuracy = 0 
+            epoch_count = 0 
+            for epoch in range(cfg.num_epochs):
                 # requires a regex to adapt the loss value in the file name here
                 #we should only have 1 
                 # ckpt_re = ".ckpt-%d" % (num_batches_per_epoch_train * epoch)
@@ -124,8 +126,9 @@ def main(args):
 
                 ave_acc = accuracy_sum / count 
                 print('the average accuracy in this epoch is %f' % ave_acc)
+                epoch_accuracy += ave_acc
                 test_dataset.reset()
-
+            print('Avg accuracy across all epochs is, ',  epoch_accuracy / cfg.num_epochs)
             # coord.join(threads)
 
 
