@@ -5,25 +5,25 @@ E-mail: zhangsuofei at njupt.edu.cn | hangyu5 at illinois.edu
 """
 
 import tensorflow as tf
-from config import cfg, get_dataset_size_train, get_dataset_size_test, get_num_classes, get_create_inputs
+from config import cfg
 from models.cnn_baseline import build_cnn_baseline, cross_ent_loss
-
 import time
 import os
 from utils import test_accuracy
 import tensorflow.contrib.slim as slim
+from utils import load_mscoco, test_accuracy, load_tless_split, load_fashion_mnist
 
-import logging
-import daiquiri
+# import logging
+# import daiquiri
 
-daiquiri.setup(level=logging.DEBUG)
-logger = daiquiri.getLogger(__name__)
+# daiquiri.setup(level=logging.DEBUG)
+# logger = daiquiri.getLogger(__name__)
 
 
 def main(args):
     """Get dataset hyperparameters."""
     # assert len(args) == 3 and isinstance(args[1], str) and isinstance(args[2], str)
-    assert len(args) == 3 and isinstance(args[1], str) and args[2] in ["mscoco", "tless"]
+    assert len(args) == 3 and isinstance(args[1], str) and args[2] in ["mscoco", "tless", 'fashion']
     experiment_name = args[1]
     dataset_name = args[2]
 
@@ -39,6 +39,9 @@ def main(args):
 
         # squash labels like so: turn original labels of [1, 55, 33, 33, 1, 33, 55] into [0, 2, 1, 1, 0, 1, 2]
         _, test_dataset.y = np.unique(np.asarray(val_dataset.y), return_inverse=True)
+    elif dataset_name == "fashion":
+        test_dataset = load_fashion_mnist(cfg, phase = 'test')
+        num_classes = 10
 
     # dataset_name = args[1]
     # model_name = args[2]

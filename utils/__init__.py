@@ -5,7 +5,7 @@ import tensorflow as tf
 
 from config import cfg
 from .dataset import Dataset, TLessDataset
-from .dataset import load_mscoco, load_tless_split
+from .dataset import load_mscoco, load_tless_split, load_fashion_mnist
 
 
 def test_accuracy(logits, labels):

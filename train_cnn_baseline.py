@@ -1,7 +1,7 @@
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
 from config import cfg
-from utils import load_mscoco, test_accuracy, load_tless_split
+from utils import load_mscoco, test_accuracy, load_tless_split, load_fashion_mnist
 import time
 import numpy as np
 import sys
@@ -13,7 +13,7 @@ from models.cnn_baseline import build_cnn_baseline, cross_ent_loss
 def main(args):
     tf.set_random_seed(1234)
 
-    assert len(args) == 3 and isinstance(args[1], str) and args[2] in ["mscoco", "tless"]
+    assert len(args) == 3 and isinstance(args[1], str) and args[2] in ["mscoco", "tless", "fashion"]
     experiment_name = args[1]
     dataset_name = args[2]
     print('experiment name is', experiment_name)
@@ -22,7 +22,6 @@ def main(args):
     if dataset_name == 'mscoco':
         train_dataset = load_mscoco(cfg.phase, cfg, return_dataset=True)
         val_dataset = load_mscoco('val', cfg, return_dataset=True)
-        dataset_name = 'mscoco' 
         num_classes = 2
     elif dataset_name == 'tless':
         num_classes = 10
@@ -31,6 +30,9 @@ def main(args):
         # squash labels like so: turn original labels of [1, 55, 33, 33, 1, 33, 55] into [0, 2, 1, 1, 0, 1, 2]
         _, train_dataset.y = np.unique(np.asarray(train_dataset.y), return_inverse=True)
         _, val_dataset.y = np.unique(np.asarray(val_dataset.y), return_inverse=True)
+    elif dataset_name == "fashion":
+        train_dataset, val_dataset = load_fashion_mnist(cfg)
+        num_classes = 10
 
     checkpoints_to_keep = 1
     N, D = train_dataset.X.shape[0], train_dataset.X.shape[1]

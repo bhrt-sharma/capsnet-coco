@@ -231,3 +231,37 @@ class TLessDataset(Dataset):
         final_image = rescaled_image.astype(np.uint8) # Convert to integer data type pixels.
     
         return final_image
+
+def load_fashion_mnist(cfg, phase='train'):
+    if phase=='train':
+        return FashionMNISTDataset(batch_size=cfg.batch_size, phase='train'), FashionMNISTDataset(batch_size=cfg.batch_size, phase='val')
+    elif phase == 'test':
+        return FashionMNISTDataset(batch_size=cfg.batch_size, phase='test')
+
+class FashionMNISTDataset(Dataset):
+    def __init__(self, batch_size=50, phase='train', shuffle=True):
+        self.batch_size = batch_size
+        self.is_train = (phase == 'train') or (phase == 'val')
+        self.shuffle = shuffle
+        self.current_idx = 0
+
+        from keras.datasets import fashion_mnist
+
+        (x_train, y_train), (x_test, y_test) = fashion_mnist.load_data()
+
+        if (phase == 'train'):
+            self.X = x_train[:,:,:,np.newaxis]
+            self.y = y_train
+        elif (phase == 'val'):
+            first_half = int(x_test.shape[0] / 2)
+            print('first half', first_half)
+            self.X = x_test[:first_half,:,:,np.newaxis]
+            self.y = y_test[:first_half]
+        elif (phase == 'test'):
+            second_half = int(x_test.shape[0]/2)
+            print('second half', second_half)
+            self.X = x_test[second_half:, :, :, np.newaxis]
+            self.y = y_test[second_half:, :, :, np.newaxis]
+
+        print (self.X.shape, self.y.shape)
+        self.setup()

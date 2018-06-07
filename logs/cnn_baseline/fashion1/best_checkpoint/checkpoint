@@ -1,0 +1,2 @@
+model_checkpoint_path: "cnn_best.ckpt-1200"
+all_model_checkpoint_paths: "cnn_best.ckpt-1200"

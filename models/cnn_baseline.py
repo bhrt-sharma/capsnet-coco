@@ -1,7 +1,7 @@
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
 import numpy as np
-
+from config import cfg
 
 def cross_ent_loss(output, x, y):
     loss = tf.losses.sparse_softmax_cross_entropy(labels=y, logits=output)
@@ -20,7 +20,8 @@ def cross_ent_loss(output, x, y):
     with tf.variable_scope('decoder'):
         output = slim.fully_connected(output, 512, trainable=True)
         output = slim.fully_connected(output, 1024, trainable=True)
-        output = slim.fully_connected(output, data_size * data_size * 3,
+        num_channels = 1 if cfg.greyscale == True else 3 
+        output = slim.fully_connected(output, data_size * data_size * num_channels,
                                       trainable=True, activation_fn=tf.sigmoid)
 
         x = tf.reshape(x, shape=[batch_size, -1])
