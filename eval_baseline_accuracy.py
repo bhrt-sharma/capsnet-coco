@@ -27,7 +27,6 @@ def main(args):
     experiment_name = args[1]
     dataset_name = args[2]
 
-
     """ GET DATA """
     if dataset_name == 'mscoco':
         test_dataset = load_mscoco('test', cfg, return_dataset=True)
@@ -95,7 +94,7 @@ def main(args):
                 cfg.test_logdir + '/cnn_baseline/{}/'.format(experiment_name), graph=sess.graph)  # graph=sess.graph, huge!
 
             files = os.listdir(cfg.logdir + '/cnn_baseline/{}/'.format(experiment_name))
-
+            ckpt = tf.train.get_checkpoint_state(cfg.logdir + '/cnn_baseline/{}/best_checkpoint/'.format(experiment_name))
             for epoch in range(1, cfg.epoch):
                 # requires a regex to adapt the loss value in the file name here
                 #we should only have 1 
@@ -104,7 +103,6 @@ def main(args):
                 #     if __file.endswith(".index"):
                 #         ckpt = os.path.join(cfg.logdir + '/{}/{}/'.format(model_name, dataset_name), __file[:-6])
                 #         print('ckpt is', ckpt)
-                ckpt = tf.train.get_checkpoint_state(cfg.logdir + '/cnn_baseline/{}/{}'.format(experiment_name))
                 # ckpt = os.path.join(cfg.logdir, "model.ckpt-%d" % (num_batches_per_epoch_train * epoch))
                 saver.restore(sess, ckpt.model_checkpoint_path)
 
@@ -123,7 +121,7 @@ def main(args):
                     step += 1
 
                 ave_acc = accuracy_sum / num_batches_test
-                print('the average accuracy is %f' % ave_acc)
+                print('the average accuracy in this epoch is %f' % ave_acc)
 
             # coord.join(threads)
 
