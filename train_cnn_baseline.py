@@ -86,6 +86,9 @@ def main(args):
     bestmodel_dir = os.path.join(cfg.logdir + '/cnn_baseline/{}'.format(experiment_name), 'best_checkpoint')
     if not os.path.exists(bestmodel_dir):
         os.makedirs(bestmodel_dir)
+    print('about to print all variables')
+    print(tf.local_variables())
+
     bestmodel_ckpt_path = os.path.join(bestmodel_dir, "cnn_best.ckpt")
     train_saver = tf.train.Saver(tf.global_variables(), max_to_keep = checkpoints_to_keep)
     bestmodel_saver = tf.train.Saver(tf.global_variables(), max_to_keep = checkpoints_to_keep)

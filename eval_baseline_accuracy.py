@@ -12,7 +12,8 @@ import os
 from utils import test_accuracy
 import tensorflow.contrib.slim as slim
 from utils import load_mscoco, test_accuracy, load_tless_split, load_fashion_mnist
-
+from tensorflow.contrib.framework import list_variables
+import numpy as np 
 # import logging
 # import daiquiri
 
@@ -66,11 +67,8 @@ def main(args):
         batch_x = tf.placeholder(tf.float32, shape=(cfg.batch_size, D, D, num_channels), name="input")
         batch_labels = tf.placeholder(tf.int32, shape=(cfg.batch_size), name="labels")        
         batch_x = slim.batch_norm(batch_x, center=False, is_training=False, trainable=False)
-        batch_x_squash = tf.divide(batch_x, 255.)
-        batch_x_norm = slim.batch_norm(batch_x, center=False, is_training=True, trainable=True)
-        output = build_cnn_baseline(batch_x_norm, is_train=True, num_classes=num_classes)
+        output = build_cnn_baseline(batch_x, is_train=False, num_classes=num_classes)
         acc = test_accuracy(output, batch_labels)
-    
 
         batch_acc = test_accuracy(output, batch_labels)
         saver = tf.train.Saver()
@@ -95,6 +93,9 @@ def main(args):
 
             files = os.listdir(cfg.logdir + '/cnn_baseline/{}/'.format(experiment_name))
             ckpt = tf.train.get_checkpoint_state(cfg.logdir + '/cnn_baseline/{}/best_checkpoint/'.format(experiment_name))
+
+            print ('this is ckpt', ckpt)
+            print ('these are vars?', list_variables(cfg.logdir + '/cnn_baseline/{}/best_checkpoint/'.format(experiment_name)))
             for epoch in range(1, cfg.num_epochs):
                 # requires a regex to adapt the loss value in the file name here
                 #we should only have 1 
@@ -105,13 +106,13 @@ def main(args):
                 #         print('ckpt is', ckpt)
                 # ckpt = os.path.join(cfg.logdir, "model.ckpt-%d" % (num_batches_per_epoch_train * epoch))
                 saver.restore(sess, ckpt.model_checkpoint_path)
-
                 accuracy_sum = 0
-
+                count = 0 
                 while test_dataset.has_next_batch():
                     test_batch = test_dataset.next_batch()
                     feed_dict = {batch_x: test_batch[0].astype(np.float32), batch_labels: test_batch[1]}
-                    batch_acc_v, summary_str, step_out = sess.run([acc, summary_op, global_step], feed_dict=feed_dict)
+
+                    batch_acc_v, summary_str = sess.run([acc, summary_op], feed_dict=feed_dict)
 
                     print('%d batches are tested.' % step)
                     summary_writer.add_summary(summary_str, step)
@@ -119,9 +120,11 @@ def main(args):
                     accuracy_sum += batch_acc_v
 
                     step += 1
+                    count += 1
 
-                ave_acc = accuracy_sum / num_batches_test
+                ave_acc = accuracy_sum / count 
                 print('the average accuracy in this epoch is %f' % ave_acc)
+                test_dataset.reset()
 
             # coord.join(threads)
 

@@ -73,26 +73,25 @@ class Dataset(object):
         self.reset()
 
     def next_batch(self):
-         """ Fetch the next batch. """
-         assert self.has_next_batch()
+        """ Fetch the next batch. """
+        assert self.has_next_batch()
 
-         if self.has_full_next_batch():
-             start, end = self.current_idx, \
-                          self.current_idx + self.batch_size
-             current_idxs = self.idxs[start:end]
-         else:
-             start, end = self.current_idx, self.count
-             current_idxs = self.idxs[start:end] + \
-                            list(np.random.choice(self.count, self.fake_count))
+        if self.has_full_next_batch():
+         start, end = self.current_idx, \
+                      self.current_idx + self.batch_size
+         current_idxs = self.idxs[start:end]
+        else:
+         start, end = self.current_idx, self.count
+         current_idxs = self.idxs[start:end] + \
+                        list(np.random.choice(self.count, self.fake_count))
 
-         image_files = self.X[current_idxs]
-         if self.is_train:
-             categories = self.y[current_idxs]
-             self.current_idx += self.batch_size
-             return image_files, categories
-         else:
-             self.current_idx += self.batch_size
-             return image_files
+        image_files = self.X[current_idxs]
+        categories = self.y[current_idxs]
+        self.current_idx += self.batch_size
+         # if self.is_train:
+         #     return image_files, categories
+         # else:
+        return image_files, categories
 
     def has_next_batch(self):
          """ Determine whether there is a batch left. """
