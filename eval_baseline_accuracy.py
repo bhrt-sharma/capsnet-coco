@@ -30,22 +30,22 @@ def main(args):
 
     """ GET DATA """
     if dataset_name == 'mscoco':
+        cfg.greyscale = False 
         num_classes = 2
         test_dataset = load_mscoco('test', cfg, return_dataset=True)
         dataset_name = 'mscoco' 
-        cfg.greyscale = False 
     elif dataset_name == 'tless':
+        cfg.greyscale = False 
         num_classes = 10
         _, _, test_dataset = load_tless_split(cfg, num_classes)
 
         # squash labels like so: turn original labels of [1, 55, 33, 33, 1, 33, 55] into [0, 2, 1, 1, 0, 1, 2]
         _, test_dataset.y = np.unique(np.asarray(test_dataset.y), return_inverse=True)
-        cfg.greyscale = False 
 
     elif dataset_name == "fashion":
+        cfg.greyscale = True  
         test_dataset = load_fashion_mnist(cfg, phase = 'test')
         num_classes = 10
-        cfg.greyscale = True  
 
 
     # dataset_name = args[1]

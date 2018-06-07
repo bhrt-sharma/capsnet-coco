@@ -20,24 +20,26 @@ def main(args):
     print ('dataset name is ', dataset_name)
     """ GET DATA """
     if dataset_name == 'mscoco':
-        train_dataset = load_mscoco(cfg.phase, cfg, return_dataset=True)
-        val_dataset = load_mscoco('val', cfg, return_dataset=True)
         num_classes = 2
         cfg.greyscale = False 
+        train_dataset = load_mscoco(cfg.phase, cfg, return_dataset=True)
+        val_dataset = load_mscoco('val', cfg, return_dataset=True)
 
     elif dataset_name == 'tless':
         num_classes = 10
+        cfg.greyscale = False 
+
         train_dataset, val_dataset, test_dataset = load_tless_split(cfg, num_classes)
 
         # squash labels like so: turn original labels of [1, 55, 33, 33, 1, 33, 55] into [0, 2, 1, 1, 0, 1, 2]
         _, train_dataset.y = np.unique(np.asarray(train_dataset.y), return_inverse=True)
         _, val_dataset.y = np.unique(np.asarray(val_dataset.y), return_inverse=True)
-        cfg.greyscale = False 
 
     elif dataset_name == "fashion":
+        cfg.greyscale = True 
+
         train_dataset, val_dataset = load_fashion_mnist(cfg)
         num_classes = 10
-        cfg.greyscale = True 
 
     checkpoints_to_keep = 1
     N, D = train_dataset.X.shape[0], train_dataset.X.shape[1]
