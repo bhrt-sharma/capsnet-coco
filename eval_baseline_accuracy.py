@@ -30,18 +30,23 @@ def main(args):
 
     """ GET DATA """
     if dataset_name == 'mscoco':
-        test_dataset = load_mscoco('test', cfg, return_dataset=True)
-        dataset_name = 'mscoco' 
         num_classes = 2
+        test_dataset = load_mscoco('test', cfg, return_dataset=True, num = num_classes)
+        dataset_name = 'mscoco' 
+        cfg.greyscale = False 
     elif dataset_name == 'tless':
         num_classes = 10
         _, _, test_dataset = load_tless_split(cfg, num_classes)
 
         # squash labels like so: turn original labels of [1, 55, 33, 33, 1, 33, 55] into [0, 2, 1, 1, 0, 1, 2]
         _, test_dataset.y = np.unique(np.asarray(test_dataset.y), return_inverse=True)
+        cfg.greyscale = False 
+
     elif dataset_name == "fashion":
         test_dataset = load_fashion_mnist(cfg, phase = 'test')
         num_classes = 10
+        cfg.greyscale = True  
+
 
     # dataset_name = args[1]
     # model_name = args[2]
@@ -94,8 +99,6 @@ def main(args):
             files = os.listdir(cfg.logdir + '/cnn_baseline/{}/'.format(experiment_name))
             ckpt = tf.train.get_checkpoint_state(cfg.logdir + '/cnn_baseline/{}/best_checkpoint/'.format(experiment_name))
 
-            print ('this is ckpt', ckpt)
-            print ('these are vars?', list_variables(cfg.logdir + '/cnn_baseline/{}/best_checkpoint/'.format(experiment_name)))
             epoch_accuracy = 0 
             epoch_count = 0 
             for epoch in range(cfg.num_epochs):
