@@ -259,7 +259,7 @@ class FashionMNISTDataset(Dataset):
         elif (phase == 'test'):
             second_half = int(x_test.shape[0]/2)
             self.X = x_test[second_half:, :, :, np.newaxis]
-            self.y = y_test[second_half:, :, :, np.newaxis]
+            self.y = y_test[second_half:]
 
         print (self.X.shape, self.y.shape)
         self.setup()
