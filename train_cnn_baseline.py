@@ -26,7 +26,7 @@ def main(args):
         val_dataset = load_mscoco('val', cfg, return_dataset=True)
 
     elif dataset_name == 'tless':
-        num_classes = 10
+        num_classes = 2
         cfg.greyscale = False 
 
         train_dataset, val_dataset, test_dataset = load_tless_split(cfg, num_classes)

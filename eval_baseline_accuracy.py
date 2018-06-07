@@ -36,7 +36,7 @@ def main(args):
         dataset_name = 'mscoco' 
     elif dataset_name == 'tless':
         cfg.greyscale = False 
-        num_classes = 10
+        num_classes = 2
         _, _, test_dataset = load_tless_split(cfg, num_classes)
 
         # squash labels like so: turn original labels of [1, 55, 33, 33, 1, 33, 55] into [0, 2, 1, 1, 0, 1, 2]
