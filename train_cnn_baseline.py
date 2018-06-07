@@ -33,6 +33,7 @@ def main(args):
     elif dataset_name == "fashion":
         train_dataset, val_dataset = load_fashion_mnist(cfg)
         num_classes = 10
+        cfg.greyscale = True 
 
     checkpoints_to_keep = 1
     N, D = train_dataset.X.shape[0], train_dataset.X.shape[1]
