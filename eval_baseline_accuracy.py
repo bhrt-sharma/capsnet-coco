@@ -95,7 +95,7 @@ def main(args):
 
             files = os.listdir(cfg.logdir + '/cnn_baseline/{}/'.format(experiment_name))
             ckpt = tf.train.get_checkpoint_state(cfg.logdir + '/cnn_baseline/{}/best_checkpoint/'.format(experiment_name))
-            for epoch in range(1, cfg.epoch):
+            for epoch in range(1, cfg.num_epochs):
                 # requires a regex to adapt the loss value in the file name here
                 #we should only have 1 
                 # ckpt_re = ".ckpt-%d" % (num_batches_per_epoch_train * epoch)
