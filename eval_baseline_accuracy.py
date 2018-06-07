@@ -31,7 +31,7 @@ def main(args):
     """ GET DATA """
     if dataset_name == 'mscoco':
         num_classes = 2
-        test_dataset = load_mscoco('test', cfg, return_dataset=True, num = num_classes)
+        test_dataset = load_mscoco('test', cfg, return_dataset=True)
         dataset_name = 'mscoco' 
         cfg.greyscale = False 
     elif dataset_name == 'tless':
